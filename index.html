@@ -211,6 +211,14 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
 .shake{ animation:shake .4s; }
 @keyframes shake{ 0%,100%{transform:none} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
 
+/* ---- 真エンディング前のメッセージ ---- */
+.truth-panel{ gap:16px; padding:30px 22px 26px; }
+.truth-text{ font-family:var(--serif); font-weight:600; font-size:clamp(15px,4.2vw,18px);
+  line-height:2.15; letter-spacing:.06em; color:var(--cream); }
+.truth-secret{ font-family:var(--serif); font-size:clamp(13px,3.6vw,15px); line-height:2.1;
+  letter-spacing:.05em; color:var(--lime); padding:13px 14px 12px; margin-top:2px;
+  border-top:1px dashed rgba(199,217,58,.35); border-bottom:1px dashed rgba(199,217,58,.35); }
+
 /* ---- 正解（ショップ提示）画面 ---- */
 .panel{ width:min(400px,100%); padding:26px 22px 24px; border-radius:14px;
   background:rgba(4,18,26,.72); border:1px solid rgba(233,232,0,.22);
@@ -243,14 +251,14 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
 .staff-pass:focus{ border-color:var(--lime); }
 .staff-btns{ display:flex; gap:10px; }
 
-/* 引換済スタンプ（朱印風） */
-.stamp{ display:none; position:absolute; right:12px; top:50%;
-  transform:translateY(-50%) rotate(-11deg); width:92px; height:92px; border-radius:50%;
+/* 引換済スタンプ（朱印風）※重なり防止のため通常配置 */
+.stamp{ display:none; margin-top:2px; transform:rotate(-8deg);
+  width:96px; height:96px; border-radius:50%;
   border:3px double #d9412f; color:#e8503c; align-items:center; justify-content:center;
   flex-direction:column; gap:2px; background:rgba(217,65,47,.07); pointer-events:none; }
 .stamp.show{ display:flex; animation:press .45s cubic-bezier(.2,1.5,.4,1) both; }
-@keyframes press{ 0%{ transform:translateY(-50%) rotate(-11deg) scale(2.1); opacity:0 }
-  60%{ opacity:1 } 100%{ transform:translateY(-50%) rotate(-11deg) scale(1); opacity:1 } }
+@keyframes press{ 0%{ transform:rotate(-8deg) scale(2.1); opacity:0 }
+  60%{ opacity:1 } 100%{ transform:rotate(-8deg) scale(1); opacity:1 } }
 .stamp-main{ font-family:var(--serif); font-weight:800; font-size:21px; letter-spacing:.06em; }
 .stamp-sub{ font-family:var(--mono); font-size:8px; letter-spacing:.06em; opacity:.9; }
 .redeem.done{ border-style:solid; border-color:rgba(233,232,0,.35); }
@@ -380,14 +388,27 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
       </div>
     </div>
 
-    <p class="next-note">店員から「エクストラ問題」を受け取り、<br>解けたらもう一度このQRを読み込んでね。</p>
   </div>
 </section>
 
 <!-- ⑤ 予備：真エンディングへの橋渡し（一瞬だけ表示） -->
 <section class="stage" id="s-truth">
-  <div class="eyebrow">THE TRUTH</div>
-  <h1 class="title" id="truthTitle">——すべての違和感の、正体。</h1>
+  <div class="panel truth-panel">
+    <div class="clear-badge">THE TRUTH</div>
+    <p class="truth-text">
+      よくすべての謎を解き明かした。<br>
+      ぜひこれからも竹島水族館を、<br>
+      生き物を、自然を愛してくれ。
+    </p>
+    <p class="truth-secret">
+      なお、このメッセージが見れたことは<br>
+      あなたと私だけの秘密だぞ。
+    </p>
+    <button class="btn" id="endBtn">
+      <span class="plabel">PLAY ▶</span>
+      <span class="jlabel">エンディングを見る</span>
+    </button>
+  </div>
 </section>
 
 <a href="#" class="tiny-link" id="resetLink" title="最初から">↻ RESET</a>
@@ -466,7 +487,13 @@ const answersFor = list => list.map(norm);
 const KEY = "takeshima_nazo_stage1";
 function saveCleared(){ try{ localStorage.setItem(KEY,"yes"); }catch(e){} }
 function isCleared(){ try{ return localStorage.getItem(KEY)==="yes"; }catch(e){ return false; } }
-function resetProgress(){ try{ localStorage.removeItem(KEY); }catch(e){} }
+function resetProgress(){
+  try{
+    localStorage.removeItem(KEY);
+    localStorage.removeItem("takeshima_ticket");
+    localStorage.removeItem("takeshima_redeem");
+  }catch(e){}
+}
 
 if(q.get("reset")==="1"){ resetProgress(); }
 
@@ -561,6 +588,7 @@ function playVideo(url, onEnd){
   tapPlay.classList.remove("show");
 
   let done=false;                       // ← 多重発火（二重遷移）防止
+  let watchdog=null;
   const finish=()=>{
     if(done) return; done=true;
     player.onended=null; player.onerror=null;
@@ -577,7 +605,7 @@ function playVideo(url, onEnd){
 
   // 【安全弁】動画が読み込めない場合は止まらず次へ進める
   player.onerror = ()=>{ track("video_error"); finish(); };
-  let watchdog = setTimeout(()=>{
+  watchdog = setTimeout(()=>{
     // 一定時間たっても1フレームも再生できていない＝配信不良とみなして進行
     if(!done && player.readyState < 2){ track("video_stall"); finish(); }
   }, 12000);
@@ -715,7 +743,7 @@ function doRedeem(){
   const pass=$("#staffPass").value.trim();
   const msg=$("#staffMsg");
   if(!pass) return;
-  if(pass === CONFIG.staffPassword){
+  if(norm(pass) === norm(CONFIG.staffPassword)){
     const rec={ redeemed:true, at:Date.now(), ticket:getTicket() };
     setRedeem(rec);
     track("prize_redeemed", { ticket: rec.ticket });
@@ -730,21 +758,33 @@ function doRedeem(){
 $("#staffOk").addEventListener("click", doRedeem);
 $("#staffPass").addEventListener("keydown", e=>{ if(e.key==="Enter") doRedeem(); });
 
-/* ---- ⑤ 第2段階クリア → 真エンディング動画 → アンケート ---- */
+/* ---- ⑤ 第2段階クリア → メッセージ → 真エンディング → アンケート ---- */
 function toTrueEnding(){
-  setTimeout(()=>{
-    show("#s-truth");
-    setTimeout(()=>{
-      playVideo(CONFIG.endingVideoUrl, ()=>{
-        // 動画終了後、アンケートへ
-        track("go_survey");
-        setTimeout(()=>{ location.href=CONFIG.surveyUrl; }, CONFIG.surveyDelayMs);
-      });
-    }, 1400);
-  }, 500);
+  setTimeout(()=>show("#s-truth"), 500);
 }
+// メッセージを読んだあと、タップでエンディングへ（タップ＝操作なので音が確実に鳴る）
+$("#endBtn").addEventListener("click", ()=>{
+  track("ending_start");
+  playVideo(CONFIG.endingVideoUrl, ()=>{
+    track("go_survey");
+    setTimeout(()=>{ location.href=CONFIG.surveyUrl; }, CONFIG.surveyDelayMs);
+  });
+});
 
-/* ---- RESET ---- */
+/* ---- 起動時の画面判定 ----
+   ・未クリア                → 通常スタート
+   ・クリア済み＆参加賞まだ  → 引換画面（リロードしても店員に提示できる）
+   ・クリア済み＆引換済み    → 2回目（エクストラ）スタート
+   ※ ?extra=1 が付いていれば常にエクストラへ                          */
+(function boot(){
+  const rec=getRedeem();
+  const redeemed = !!(rec && rec.redeemed);
+  if(isCleared() && !redeemed && q.get("extra")!=="1"){
+    $("#clearTicket").textContent = "TICKET  " + getTicket();
+    renderRedeem();
+    show("#s-clear");
+  }
+})();
 $("#resetLink").addEventListener("click", e=>{
   e.preventDefault();
   resetProgress();
