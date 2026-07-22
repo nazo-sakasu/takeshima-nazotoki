@@ -219,6 +219,12 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
   letter-spacing:.05em; color:var(--lime); padding:13px 14px 12px; margin-top:2px;
   border-top:1px dashed rgba(199,217,58,.35); border-bottom:1px dashed rgba(199,217,58,.35); }
 
+.prize-note{ font-size:12.5px; line-height:1.95; color:var(--lime); letter-spacing:.02em;
+  max-width:30ch; margin:0 auto; }
+.prize-note strong{ color:#fff; font-weight:800; }
+.prize-note br{ display:none; }
+@media (min-width:400px){ .prize-note br{ display:inline; } }
+
 /* ---- 正解（ショップ提示）画面 ---- */
 .panel{ width:min(400px,100%); padding:26px 22px 24px; border-radius:14px;
   background:rgba(4,18,26,.72); border:1px solid rgba(233,232,0,.22);
@@ -408,6 +414,21 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
       <span class="plabel">PLAY ▶</span>
       <span class="jlabel">エンディングを見る</span>
     </button>
+    <p class="prize-note">このあとのアンケートに答えると、抽選で<br>
+      <strong>水族館のペア入館券</strong>や<strong>オリジナルグッズ詰め合わせ（1万円相当）</strong><br>が当たるかもしれないぞ。</p>
+  </div>
+</section>
+
+<section class="stage" id="s-done">
+  <div class="panel">
+    <div class="clear-badge">ALL MYSTERIES SOLVED</div>
+    <h1 class="congrats">すべての謎は、解けた。</h1>
+    <p class="present-note">最後まで付き合ってくれてありがとう。</p>
+    <p class="prize-note">アンケートに答えると、抽選で<br>
+      <strong>水族館のペア入館券</strong>や<strong>オリジナルグッズ詰め合わせ（1万円相当）</strong><br>が当たるかもしれないぞ。</p>
+    <button class="btn" id="surveyBtn">
+      <span class="plabel">SURVEY</span><span class="jlabel">アンケートに答える</span>
+    </button>
   </div>
 </section>
 
@@ -492,6 +513,7 @@ function resetProgress(){
     localStorage.removeItem(KEY);
     localStorage.removeItem("takeshima_ticket");
     localStorage.removeItem("takeshima_redeem");
+    localStorage.removeItem("takeshima_finished");
   }catch(e){}
 }
 
@@ -759,16 +781,29 @@ $("#staffOk").addEventListener("click", doRedeem);
 $("#staffPass").addEventListener("keydown", e=>{ if(e.key==="Enter") doRedeem(); });
 
 /* ---- ⑤ 第2段階クリア → メッセージ → 真エンディング → アンケート ---- */
+const FINISH_KEY = "takeshima_finished";
+function isFinished(){ try{ return localStorage.getItem(FINISH_KEY)==="yes"; }catch(e){ return false; } }
+function setFinished(){ try{ localStorage.setItem(FINISH_KEY,"yes"); }catch(e){} }
+
 function toTrueEnding(){
   setTimeout(()=>show("#s-truth"), 500);
 }
 // メッセージを読んだあと、タップでエンディングへ（タップ＝操作なので音が確実に鳴る）
 $("#endBtn").addEventListener("click", ()=>{
+  setFinished();                       // ← 以後この端末では再生画面を出さない
   track("ending_start");
   playVideo(CONFIG.endingVideoUrl, ()=>{
     track("go_survey");
     setTimeout(()=>{ location.href=CONFIG.surveyUrl; }, CONFIG.surveyDelayMs);
   });
+});
+// アンケートへ戻ってきた場合の再遷移用
+$("#surveyBtn").addEventListener("click", ()=>{
+  location.href = CONFIG.surveyUrl;
+});
+// ブラウザの「戻る」で復帰した時も、誤って再生ボタンを押さないようにする
+window.addEventListener("pageshow", ()=>{
+  if(isFinished()) show("#s-done");
 });
 
 /* ---- 起動時の画面判定 ----
@@ -777,6 +812,8 @@ $("#endBtn").addEventListener("click", ()=>{
    ・クリア済み＆引換済み    → 2回目（エクストラ）スタート
    ※ ?extra=1 が付いていれば常にエクストラへ                          */
 (function boot(){
+  // エンディングを見終わっていれば、以後は完了画面のみ（誤って再生しないように）
+  if(isFinished()){ show("#s-done"); return; }
   const rec=getRedeem();
   const redeemed = !!(rec && rec.redeemed);
   if(isCleared() && !redeemed && q.get("extra")!=="1"){

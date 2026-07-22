@@ -92,10 +92,6 @@ input[type=text]:disabled{ color:var(--lime); -webkit-text-fill-color:var(--lime
 .msg{ margin-top:10px; font-size:12.5px; letter-spacing:.03em; line-height:1.7; min-height:18px; text-align:center; }
 .msg.err{ color:#ff8a6b; }
 .msg.ok{ color:var(--lime); }
-.hint{ display:none; margin-top:11px; padding:11px 13px; border-radius:8px;
-  background:rgba(199,217,58,.07); border-left:2px solid var(--lime);
-  font-size:12.5px; line-height:1.9; color:rgba(245,237,224,.82); text-align:left; }
-.hint.show{ display:block; }
 .shake{ animation:shake .4s; }
 @keyframes shake{ 0%,100%{transform:none} 20%,60%{transform:translateX(-7px)} 40%,80%{transform:translateX(7px)} }
 
@@ -108,6 +104,18 @@ input[type=text]:disabled{ color:var(--lime); -webkit-text-fill-color:var(--lime
 .finale h2{ font-family:var(--serif); font-weight:800; font-size:clamp(19px,5.4vw,24px); letter-spacing:.08em; }
 .finale p{ font-size:13.5px; line-height:2; color:rgba(245,237,224,.85); margin-top:12px; }
 .finale .mark{ color:var(--lime); font-weight:700; }
+
+/* ---- LINE案内 ---- */
+.linebox{ display:none; margin-top:24px; padding:18px 18px 17px; border-radius:12px; text-align:center;
+  background:rgba(6,24,33,.6); border:1px solid rgba(6,199,85,.3); backdrop-filter:blur(6px); }
+.linebox.show{ display:block; }
+.linetext{ font-size:13px; line-height:1.9; color:rgba(245,237,224,.85); letter-spacing:.02em; }
+.linebtn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; margin-top:12px;
+  font-family:var(--sans); font-weight:700; font-size:13.5px; letter-spacing:.08em;
+  color:#06251a; background:#06C755; border-radius:999px; padding:11px 24px; text-decoration:none;
+  box-shadow:0 6px 18px rgba(6,199,85,.28); transition:transform .08s ease, box-shadow .2s ease; }
+.linebtn:hover{ box-shadow:0 10px 26px rgba(6,199,85,.45); }
+.linebtn:active{ transform:translateY(2px); }
 
 footer{ text-align:center; margin-top:30px; font-size:11px; color:rgba(245,237,224,.35); line-height:1.9; }
 .reset{ font-family:var(--mono); font-size:10px; letter-spacing:.16em; color:rgba(245,237,224,.28);
@@ -136,49 +144,53 @@ footer{ text-align:center; margin-top:30px; font-size:11px; color:rgba(245,237,2
        その場所のQRコードを読み込もう。</p>
   </div>
 
+  <div class="linebox" id="lineBox">
+    <p class="linetext" id="lineText"></p>
+    <a class="linebtn" id="lineBtn" href="#" target="_blank" rel="noopener">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 2C6.5 2 2 5.7 2 10.2c0 4 3.6 7.4 8.4 8.1.3.1.8.2.9.5.1.3.1.7 0 1l-.1.9c0 .3-.2 1 .9.6 1.1-.5 5.9-3.5 8-6C21.4 13.7 22 12 22 10.2 22 5.7 17.5 2 12 2z"/>
+      </svg>LINEでヒントを見る
+    </a>
+  </div>
+
   <footer>
-    答えが分からないときは、スタッフに声をかけてね。
-    <br><button class="reset" id="resetBtn">↻ 記録を消して最初から</button>
+    <button class="reset" id="resetBtn">↻ 記録を消して最初から</button>
   </footer>
 </div>
 
 <script>
 /* =====================================================================
-   CONFIG ── 問題名・答え・ヒントはここだけ書き換えればOK
+   CONFIG ── 問題名・答え・LINEはここだけ書き換えればOK
    ・answers は複数登録可（ひらがな／カタカナ／全角半角は自動で吸収）
-   ・hint は2回まちがえると表示されます
    ===================================================================== */
+
+// ▼ LINEのURL（公式アカウントの友だち追加URLなど）。空にすると案内は非表示
+const LINE_URL  = "";
+const LINE_TEXT = "答えが分からないときは、LINEでヒントを確認しよう！";
+
 const QUESTIONS = [
   { no:"問1", name:"ストーリー（調査ノート＋定規）",
-    answers:["現実","げんじつ"],
-    hint:"ストーリーの文章に、カニの定規をそっと重ねてみよう。脚の先が指している文字だけを順番に読むんだ。" },
+    answers:["現実","げんじつ"] },
 
   { no:"問2", name:"タカアシガニ フォトスポット",
-    answers:["写真","しゃしん"],
-    hint:"みんなが水槽の前でやっていること。掲示されている文字の並びも、よく見てみよう。" },
+    answers:["写真","しゃしん"] },
 
   { no:"問3", name:"タカアシガニ 魚歴書",
-    answers:["深海","しんかい"],
-    hint:"塗りつぶされた場所には、どれも同じ言葉が入るよ。タカアシガニが暮らしているのはどんな場所？" },
+    answers:["深海","しんかい"] },
 
   { no:"問4", name:"アシカプール看板",
-    answers:["イソギンチャク","いそぎんちゃく"],
-    hint:"クリアファイルを看板に重ねてみよう。矢印の先にあるべき生き物の形が浮かび上がる。" },
+    answers:["イソギンチャク","いそぎんちゃく"] },
 
   { no:"問5", name:"タケシマンション",
-    answers:["アミ","あみ","網","アミ（網）"],
-    hint:"名前どうしを線で結ぶと、線そのものが文字の形になるよ。全部で3文字だ。" },
+    answers:["アミ","あみ","網","アミ（網）"] },
 
   { no:"問6", name:"ウツボ軍団 感謝状",
-    answers:["展示","てんじ","テンジ","展示（テンジ）"],
-    hint:"バラバラの文章を正しい順に並べ替えると、1枚だけ足りない札があるはず。感謝状は“何”についての話だった？" },
+    answers:["展示","てんじ","テンジ","展示（テンジ）"] },
 
   { no:"問7", name:"最後の問題",
-    answers:["ビデオテープ","びでおてーぷ","VIDEOTAPE"],
-    hint:"各問題ページの記号を、正しい順番に並べてクリアファイルで覗いてみよう。深海からやって来たものの名前だよ。" },
+    answers:["ビデオテープ","びでおてーぷ","VIDEOTAPE"] },
 ];
-const REVEAL_AFTER = 4;   // 何回まちがえたら「答えを見る」を出すか
-const HINT_AFTER   = 2;   // 何回まちがえたらヒントを出すか
+const LINE_NUDGE_AFTER = 2;   // 何回まちがえたらLINEヒントを案内するか
 /* ===================================================================== */
 
 const $ = s=>document.querySelector(s);
@@ -204,7 +216,7 @@ function norm(s){
     .toUpperCase();
 }
 
-// 進捗の保存（"ok"=自力正解 / "seen"=答えを見た）
+// 進捗の保存（"ok"=正解）
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||"{}"); }catch(e){ return {}; } }
 function save(st){ try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){} }
 let state = load();
@@ -229,11 +241,6 @@ QUESTIONS.forEach((q,i)=>{
         <button class="btn" data-check="${i}">確認</button>
       </div>
       <div class="msg" id="msg${i}"></div>
-      <div class="hint" id="hint${i}">${q.hint}</div>
-      <div class="subrow">
-        <button class="btn link" data-hint="${i}" id="hb${i}" style="display:none">ヒントを見る</button>
-        <button class="btn link" data-reveal="${i}" id="rb${i}" style="display:none">答えを見る</button>
-      </div>
     </div>`;
   list.appendChild(card);
 
@@ -259,10 +266,8 @@ list.addEventListener("click", e=>{
     }
     return;
   }
-  const ci=e.target.dataset.check, hi=e.target.dataset.hint, ri=e.target.dataset.reveal;
+  const ci=e.target.dataset.check;
   if(ci!==undefined) check(+ci);
-  if(hi!==undefined) showHint(+hi);
-  if(ri!==undefined) reveal(+ri);
 });
 list.addEventListener("keydown", e=>{
   if(e.key==="Enter" && e.target.tagName==="INPUT"){
@@ -281,22 +286,13 @@ function check(i){
     msg.className="msg ok"; msg.textContent="正解！ この調子で進もう。";
   }else{
     wrong[i]=(wrong[i]||0)+1;
-    msg.className="msg err"; msg.textContent="うーん、ちがうみたい。もう一度考えてみよう。";
+    msg.className="msg err";
+    msg.textContent = (wrong[i]>=LINE_NUDGE_AFTER)
+      ? "ちがうみたい。LINEのヒントも見てみよう。"
+      : "うーん、ちがうみたい。もう一度考えてみよう。";
     const card=inp.closest(".card");
     card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
-    if(wrong[i]>=HINT_AFTER)   $("#hb"+i).style.display="inline-block";
-    if(wrong[i]>=REVEAL_AFTER) $("#rb"+i).style.display="inline-block";
   }
-}
-function showHint(i){
-  $("#hint"+i).classList.add("show");
-  $("#hb"+i).style.display="none";
-}
-function reveal(i){
-  if(!confirm("答えを表示します。よろしいですか？")) return;
-  const q=QUESTIONS[i];
-  markOk(i,"seen");
-  $("#msg"+i).className="msg"; $("#msg"+i).textContent="答えは「"+q.answers[0]+"」。次に進もう。";
 }
 function markOk(i,kind){
   const q=QUESTIONS[i];
@@ -306,7 +302,6 @@ function markOk(i,kind){
   const card=inp.closest(".card");
   card.classList.remove("seen","ok"); card.classList.add(kind);
   card.querySelector(`[data-check="${i}"]`).style.display="none";
-  $("#hb"+i).style.display="none"; $("#rb"+i).style.display="none";
   $("#st"+i).textContent = kind==="ok" ? "正解" : "確認済";
   renderProgress();
 }
@@ -328,6 +323,19 @@ function renderProgress(){
   }
 }
 renderProgress();
+
+/* ---- LINE案内 ---- */
+(function initLine(){
+  $("#lineText").textContent = LINE_TEXT;
+  if(LINE_URL){
+    $("#lineBtn").href = LINE_URL;
+    $("#lineBox").classList.add("show");
+  }else{
+    // URL未設定のときは文言だけ表示（ボタンは出さない）
+    $("#lineBtn").style.display="none";
+    $("#lineBox").classList.add("show");
+  }
+})();
 
 /* ---- リセット ---- */
 $("#resetBtn").addEventListener("click", ()=>{
