@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04121a">
+<title>深海からの通信</title>
+
+<!-- ==========================================================================
+     竹島水族館 なぞとき ラスト問題 WEBサイト
+     「この水族館、なんか変。」  深海VHSテイスト
+     --------------------------------------------------------------------------
+     ▼ここだけ書き換えれば運用できます（下の CONFIG）
+     ==========================================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --deep:      #04121a;   /* 深海の黒 */
+  --teal:      #0a3d52;   /* 水族館ブルー */
+  --cream:     #f5ede0;   /* 文字 */
+  --orange:    #e0673b;   /* CTA・アクセント */
+  --lime:      #c7d93a;   /* 発光する黄緑（クリアファイルの破線） */
+  --dim:       rgba(245,237,224,.55);
+  --line:      rgba(199,217,58,.55);
+  --serif: "Shippori Mincho", serif;
+  --sans:  "Zen Kaku Gothic New", system-ui, sans-serif;
+  --mono:  "DM Mono", ui-monospace, monospace;
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html,body{ height:100%; }
+body{
+  font-family:var(--sans);
+  color:var(--cream);
+  /* 旧ブラウザ用フォールバック（PNG） */
+  background:
+    linear-gradient(rgba(4,10,14,.14), rgba(4,10,14,.42)),
+    url('bg.png') center center / cover no-repeat,
+    radial-gradient(140% 100% at 50% -10%, #0a3247 0%, #05202c 38%, var(--deep) 78%);
+  /* 対応ブラウザは軽量WebPを使用（1.6MB→68KB） */
+  background:
+    linear-gradient(rgba(4,10,14,.14), rgba(4,10,14,.42)),
+    image-set(url('bg.webp') type('image/webp'), url('bg.png') type('image/png')) center center / cover no-repeat,
+    radial-gradient(140% 100% at 50% -10%, #0a3247 0%, #05202c 38%, var(--deep) 78%);
+  background-color:#04121a;
+  min-height:100dvh;
+  overflow:hidden;
+  position:relative;
+}
+
+/* ---- 深海のアンビエンス（泡・クラゲ・スキャンライン） ---- */
+.ambient{ position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+.bubble{
+  position:absolute; bottom:-40px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.9), rgba(199,217,58,.05) 60%, transparent 70%);
+  opacity:0; animation:rise linear infinite;
+}
+@keyframes rise{
+  0%{ transform:translateY(0) translateX(0); opacity:0; }
+  10%{ opacity:.5; }
+  90%{ opacity:.35; }
+  100%{ transform:translateY(-112dvh) translateX(var(--drift,14px)); opacity:0; }
+}
+.jelly{ position:absolute; opacity:.14; animation:drift linear infinite; filter:drop-shadow(0 0 18px rgba(199,217,58,.25)); }
+@keyframes drift{
+  0%{ transform:translateY(0) translateX(0); }
+  50%{ transform:translateY(-26px) translateX(18px); }
+  100%{ transform:translateY(0) translateX(0); }
+}
+/* VHS 走査線＋ノイズ */
+.scan{
+  position:fixed; inset:0; z-index:40; pointer-events:none; mix-blend-mode:overlay; opacity:.5;
+  background:repeating-linear-gradient(to bottom, rgba(255,255,255,.05) 0 1px, transparent 1px 3px);
+  animation:scanmove 7s linear infinite;
+}
+@keyframes scanmove{ from{ background-position:0 0; } to{ background-position:0 60px; } }
+.vignette{ position:fixed; inset:0; z-index:41; pointer-events:none;
+  box-shadow:inset 0 0 200px 40px rgba(0,0,0,.75); }
+
+/* 発光する黄緑の縦破線（クリアファイルの意匠） */
+/* 発光する黄緑の縦破線 → 背景画像に含まれるため非表示 */
+.railL,.railR{ display:none; }
+
+/* ---- ステージ共通レイアウト ---- */
+.stage{
+  position:relative; z-index:10; min-height:100dvh;
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:min(9vh,72px) 30px; gap:26px;
+  animation:fadeIn .7s ease both;
+}
+.stage.active{ display:flex; }
+@keyframes fadeIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+
+.eyebrow{ font-family:var(--mono); font-size:12px; letter-spacing:.42em; color:var(--lime);
+  text-transform:uppercase; padding-left:.42em; }
+.timecode{ position:fixed; top:18px; left:50%; transform:translateX(-50%); z-index:30;
+  font-family:var(--mono); font-size:11px; letter-spacing:.24em; color:var(--dim); }
+.rec{ position:fixed; top:16px; right:34px; z-index:30; font-family:var(--mono); font-size:11px;
+  letter-spacing:.18em; color:var(--orange); display:flex; align-items:center; gap:7px; }
+.rec::before{ content:""; width:9px; height:9px; border-radius:50%; background:var(--orange);
+  box-shadow:0 0 10px var(--orange); animation:blink 1.3s steps(1) infinite; }
+@keyframes blink{ 50%{ opacity:.15; } }
+
+/* 縦組みタイトル */
+.vtitle{ writing-mode:vertical-rl; font-family:var(--serif); font-weight:800;
+  font-size:clamp(30px,7.4vw,52px); line-height:1.5; letter-spacing:.14em;
+  text-shadow:0 0 26px rgba(0,0,0,.6); }
+.vtitle .accent{ color:var(--orange); }
+
+h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
+  font-size:clamp(30px,8vw,58px); line-height:1.28; }
+.lead{ font-size:clamp(14px,3.6vw,16px); line-height:2; color:var(--dim); max-width:34ch; }
+
+/* ボタン */
+.btn{ font-family:var(--sans); font-weight:700; font-size:16px; letter-spacing:.06em;
+  color:var(--deep); background:var(--orange); border:none; border-radius:999px;
+  padding:17px 42px; cursor:pointer; position:relative;
+  box-shadow:0 0 0 1px rgba(255,255,255,.15), 0 10px 30px rgba(224,103,59,.35);
+  transition:transform .12s ease, box-shadow .2s ease; }
+.btn:hover{ transform:translateY(-2px); box-shadow:0 0 0 1px rgba(255,255,255,.25), 0 16px 40px rgba(224,103,59,.5); }
+.btn:active{ transform:translateY(0); }
+.btn.ghost{ background:transparent; color:var(--cream);
+  box-shadow:inset 0 0 0 1.5px var(--line); }
+.btn:focus-visible{ outline:3px solid var(--lime); outline-offset:3px; }
+.tape-ico{ display:inline-block; vertical-align:-2px; margin-right:10px; }
+
+.sound-note{ font-size:12.5px; letter-spacing:.04em; color:var(--dim); line-height:1.8; margin-top:-8px; }
+
+/* ---- 動画 ---- */
+.video-wrap{ position:fixed; inset:0; z-index:20; background:#000; display:none; }
+.video-wrap.show{ display:block; }
+.video-wrap video{ width:100%; height:100%; object-fit:contain; background:#000; }
+/* 読み込み中インジケータ */
+.loader{ position:fixed; inset:0; z-index:23; display:none; align-items:center; justify-content:center; gap:12px;
+  font-family:var(--mono); font-size:13px; letter-spacing:.22em; color:var(--dim); background:rgba(0,0,0,.55); }
+.loader.show{ display:flex; }
+.spin{ width:16px; height:16px; border:2px solid rgba(199,217,58,.25); border-top-color:var(--lime);
+  border-radius:50%; animation:spin .9s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* 自動再生がブロックされた時のタップ再生 */
+.tapplay{ position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:24; display:none;
+  font-family:var(--sans); font-weight:700; font-size:16px; letter-spacing:.06em; color:var(--deep);
+  background:var(--orange); border:none; border-radius:999px; padding:18px 40px; cursor:pointer;
+  box-shadow:0 0 0 1px rgba(255,255,255,.2), 0 12px 34px rgba(224,103,59,.45); }
+.tapplay.show{ display:block; }
+
+.skip{ position:fixed; bottom:26px; right:26px; z-index:22; font-family:var(--mono);
+  font-size:12px; letter-spacing:.2em; color:var(--dim); background:rgba(0,0,0,.4);
+  border:1px solid rgba(245,237,224,.25); border-radius:999px; padding:9px 18px; cursor:pointer; display:none; }
+
+/* ---- 回答フォーム ---- */
+.form-card{ width:min(440px,100%); background:rgba(5,26,36,.72);
+  border:1px solid rgba(199,217,58,.28); border-radius:20px; padding:30px 26px 28px;
+  backdrop-filter:blur(6px); box-shadow:0 24px 60px rgba(0,0,0,.5); }
+.form-card h2{ font-family:var(--serif); font-weight:700; font-size:22px; margin-bottom:6px; }
+.form-card p.hint{ font-size:13px; color:var(--dim); line-height:1.9; margin-bottom:20px; }
+.answer-input{ width:100%; font-family:var(--serif); font-size:26px; text-align:center;
+  letter-spacing:.14em; color:var(--cream); background:rgba(0,0,0,.35);
+  border:none; border-bottom:2px solid var(--line); padding:12px 8px 10px; outline:none; }
+.answer-input::placeholder{ color:rgba(245,237,224,.28); letter-spacing:.1em; font-size:18px; }
+.answer-input:focus{ border-color:var(--orange); }
+.form-card .btn{ width:100%; margin-top:22px; }
+.msg{ min-height:20px; margin-top:14px; font-size:13.5px; letter-spacing:.04em; }
+.msg.err{ color:#ff8a6b; }
+.msg.ok{ color:var(--lime); }
+.shake{ animation:shake .4s; }
+@keyframes shake{ 0%,100%{transform:none} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+
+/* ---- 正解（ショップ提示）画面 ---- */
+.seal{ width:132px; height:132px; position:relative; animation:pop .5s cubic-bezier(.2,1.3,.4,1) both; }
+@keyframes pop{ from{ transform:scale(.4); opacity:0 } to{ transform:scale(1); opacity:1 } }
+.clear-badge{ display:inline-block; margin-top:2px; font-family:var(--mono); font-size:12px;
+  letter-spacing:.3em; color:var(--lime); }
+.present-note{ margin-top:4px; font-size:15px; line-height:2; }
+.present-note strong{ color:var(--orange); font-weight:900; }
+.ticket{ margin-top:10px; font-family:var(--mono); font-size:12px; letter-spacing:.22em; color:var(--dim); }
+.next-note{ margin-top:20px; font-size:13px; color:var(--dim); max-width:30ch; line-height:1.9; }
+
+.tiny-link{ position:fixed; bottom:14px; left:50%; transform:translateX(-50%); z-index:30;
+  font-family:var(--mono); font-size:10px; letter-spacing:.18em; color:rgba(245,237,224,.3);
+  text-decoration:none; }
+.tiny-link:hover{ color:var(--lime); }
+
+/* ---- デジャヴュ演出（2回目だけ発動） ---- */
+.tracking{ position:fixed; left:0; right:0; top:-120px; height:110px; z-index:45; pointer-events:none;
+  background:linear-gradient(to bottom, transparent, rgba(255,255,255,.16) 46%, rgba(199,217,58,.12) 56%, transparent);
+  mix-blend-mode:screen; filter:blur(.5px); opacity:0; }
+.tracking.run{ animation:track 1.2s ease-in-out both; }
+@keyframes track{ 0%{ top:-120px; opacity:0 } 8%{ opacity:1 } 92%{ opacity:1 } 100%{ top:100dvh; opacity:0 } }
+
+.vtitle.shudder{ animation:shudder .16s steps(2) 6; }
+@keyframes shudder{
+  0%{ transform:translate(0); text-shadow:0 0 26px rgba(0,0,0,.6); }
+  33%{ transform:translate(-3px,1px); text-shadow:2px 0 rgba(224,103,59,.85), -2px 0 rgba(96,200,220,.85); }
+  66%{ transform:translate(2px,-1px); text-shadow:-2px 0 rgba(224,103,59,.85), 2px 0 rgba(96,200,220,.85); }
+  100%{ transform:translate(0); text-shadow:0 0 26px rgba(0,0,0,.6); }
+}
+.lead.dejavu{ color:var(--lime); font-family:var(--mono); letter-spacing:.05em; font-size:14px;
+  animation:flick 1.5s steps(1) both; }
+@keyframes flick{ 0%,7%{opacity:0} 8%{opacity:1} 12%{opacity:.2} 14%{opacity:1} 60%{opacity:1} 66%{opacity:.3} 70%{opacity:1} 100%{opacity:1} }
+.lead.glitchout{ animation:glitchout .5s ease both; }
+@keyframes glitchout{ 0%{opacity:1} 30%{opacity:.15; transform:translateX(4px)} 32%{transform:translateX(-4px)} 100%{opacity:0} }
+.lead.glitchin{ animation:glitchin .5s ease both; }
+@keyframes glitchin{ 0%{opacity:0; transform:translateY(6px)} 100%{opacity:1; transform:none} }
+
+@media (max-width:420px){ .railL{left:10px} .railR{right:10px} .rec{right:20px} }
+@media (prefers-reduced-motion:reduce){
+  .bubble,.jelly,.scan,.stage,.seal,.rec::before{ animation:none !important; }
+  .scan{ display:none; }
+}
+</style>
+</head>
+<body>
+
+<!-- 背景アンビエンス -->
+<div class="ambient" id="ambient" aria-hidden="true"></div>
+<div class="railL" aria-hidden="true"></div>
+<div class="railR" aria-hidden="true"></div>
+<div class="scan" aria-hidden="true"></div>
+<div class="tracking" id="tracking" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<div class="timecode" id="tc">SP  00:00:00:00</div>
+<div class="rec">REC ●</div>
+
+<!-- ① スタート -->
+<section class="stage active" id="s-start">
+  <div class="eyebrow">TAKESHIMA AQUARIUM ／ 深海調査記録</div>
+  <div class="vtitle">この水族館、<span class="accent">なんか変。</span></div>
+  <p class="lead" id="startLead">深海から一本のビデオテープが届いた。<br>これは本当に水族館にあるビデオテープだから・・・</p>
+  <button class="btn" id="playBtn">
+    <svg class="tape-ico" width="22" height="16" viewBox="0 0 22 16" fill="none">
+      <rect x="1" y="1" width="20" height="14" rx="2.5" stroke="#04121a" stroke-width="1.6"/>
+      <circle cx="7.5" cy="8" r="2.4" stroke="#04121a" stroke-width="1.6"/>
+      <circle cx="14.5" cy="8" r="2.4" stroke="#04121a" stroke-width="1.6"/>
+    </svg>テープを再生する
+  </button>
+  <p class="sound-note">🔊 音が出ます。マナーモードを解除して、音量を上げてね。</p>
+</section>
+
+<!-- ② 動画 -->
+<div class="video-wrap" id="videoWrap">
+  <video id="player" playsinline preload="auto"></video>
+  <div class="loader" id="loader"><span class="spin" aria-hidden="true"></span>読み込み中…</div>
+  <button class="tapplay" id="tapPlay">▶ タップして再生</button>
+  <div class="skip" id="skipBtn">▶▶ SKIP</div>
+</div>
+
+<!-- ③ 回答フォーム -->
+<section class="stage" id="s-answer">
+  <div class="eyebrow" id="ansEyebrow">FINAL CODE</div>
+  <div class="form-card">
+    <h2 id="ansTitle">最後の暗号を入力せよ</h2>
+    <p class="hint" id="ansHint">これまでの謎がすべて指し示す、ひとつの言葉。</p>
+    <input class="answer-input" id="ansInput" type="text" inputmode="text"
+           autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="こたえ">
+    <button class="btn" id="ansBtn">送信する</button>
+    <div class="msg" id="ansMsg" role="status" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- ④ 正解＝ショップ提示画面 -->
+<section class="stage" id="s-clear">
+  <div class="seal" aria-hidden="true">
+    <svg viewBox="0 0 132 132" width="132" height="132">
+      <circle cx="66" cy="66" r="62" fill="none" stroke="#c7d93a" stroke-width="2.5"/>
+      <circle cx="66" cy="66" r="52" fill="none" stroke="#e0673b" stroke-width="1.4" stroke-dasharray="3 5"/>
+      <text x="66" y="58" text-anchor="middle" font-family="Shippori Mincho, serif" font-weight="800"
+            font-size="30" fill="#f5ede0">正解</text>
+      <text x="66" y="84" text-anchor="middle" font-family="DM Mono, monospace"
+            font-size="10" letter-spacing="3" fill="#c7d93a">INVESTIGATED</text>
+    </svg>
+  </div>
+  <div class="clear-badge">CASE 01 — CLEARED</div>
+  <p class="present-note">
+    調査、ごくろうさま。<br>
+    この画面を <strong>ショップの店員</strong> に見せてね。
+  </p>
+  <div class="ticket" id="clearTicket">TICKET ————</div>
+  <p class="next-note">店員から「エクストラ問題」を受け取り、<br>解けたらもう一度このQRを読み込んでね。</p>
+</section>
+
+<!-- ⑤ 予備：真エンディングへの橋渡し（一瞬だけ表示） -->
+<section class="stage" id="s-truth">
+  <div class="eyebrow">THE TRUTH</div>
+  <h1 class="title" id="truthTitle">——すべての違和感の、正体。</h1>
+</section>
+
+<a href="#" class="tiny-link" id="resetLink" title="最初から">↻ RESET</a>
+
+<script>
+/* =====================================================================
+   CONFIG ── ここだけ書き換えれば運用できます
+   ===================================================================== */
+const CONFIG = {
+  // ▼ 動画URL（このHTMLと同じ場所に置いて相対パスでもOK。mp4推奨）
+  introVideoUrl : "intro.mp4",   // ビデオ再生の動画（第1段階・第2段階で共通）
+  endingVideoUrl: "intro.mp4",   // ★仮：本番は真エンディング動画に差し替え（例: "ending.mp4"）
+  introPoster   : "poster.jpg",  // 動画開始前のポスター画像（黒画面回避）
+
+  // ▼ 正解（配列で複数の表記ゆれを登録可。全角/半角・大文字小文字・カタカナ/ひらがなは自動吸収）
+  stage1Answers : ["message", "メッセージ", "メツセージ"],        // ← 第1段階＝ message
+  stage2Answers : ["竹島", "たけしま", "takeshima"],              // ← 第2段階※仮。確定したら差し替え
+
+  // ▼ 2回目（エクストラ）で一瞬だけ流れる“デジャヴュ”字幕
+  dejavuLine    : "……前にも、これを見た気がする。",
+
+  // ▼ 誤答ヒント（○回間違えたら表示。空にすれば非表示）
+  wrongHintAfter: 3,
+  stage1Hint    : "落ち着いて。手がかりはすべて館内にある。",
+  stage2Hint    : "エクストラ問題の指示をもう一度読んでみよう。",
+
+  // ▼ 真エンディング後に飛ぶGoogleフォーム
+  surveyUrl     : "https://docs.google.com/forms/d/e/1FAIpQLSefg3hXoKpUU_NXskBISIM-Pdy24Qi7zzpMs_hBZTLrdBxmvw/viewform?usp=header",
+  surveyDelayMs : 1200,   // エンディング動画終了後、フォームへ飛ぶまでの待ち時間
+
+  // ▼ GA4計測ID（例:"G-XXXXXXXXXX"）。空にすれば計測なし
+  //   計測イベント: play_start / video_end / answer_wrong / stage1_clear / stage2_clear / go_survey
+  gaId          : "",
+
+  // ▼ 運用モードの見え方（通常は触らなくてOK）
+  //  ?extra=1 …… エクストラ回答画面へ直行（ショップ用の別QRに付ける想定）
+  //  ?dev=1  …… 動画SKIPボタンを表示（テスト用）
+  //  ?reset=1 …… 進捗リセット
+};
+/* ===================================================================== */
+
+const $  = s => document.querySelector(s);
+const q  = new URLSearchParams(location.search);
+const DEV = q.get("dev") === "1";
+
+/* ---- GA4（CONFIG.gaId が空なら何もしない） ---- */
+(function ga(){
+  if(!CONFIG.gaId) return;
+  const s=document.createElement("script"); s.async=true;
+  s.src="https://www.googletagmanager.com/gtag/js?id="+CONFIG.gaId;
+  document.head.appendChild(s);
+  window.dataLayer=window.dataLayer||[];
+  window.gtag=function(){ dataLayer.push(arguments); };
+  gtag("js", new Date());
+  gtag("config", CONFIG.gaId);
+})();
+function track(name, params){
+  try{ if(window.gtag) gtag("event", name, params||{}); }catch(e){}
+}
+
+// 表記ゆれ吸収：前後空白/空白全般除去・全角英数→半角・ひらがな→カタカナ・大文字化
+function norm(s){
+  return (s||"")
+    .trim()
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+    .replace(/[\s\u3000]/g,"")
+    .replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0)+0x60))
+    .toUpperCase();
+}
+const answersFor = list => list.map(norm);
+
+// 進捗（localStorageが使えない環境でもフォールバックで動く）
+const KEY = "takeshima_nazo_stage1";
+function saveCleared(){ try{ localStorage.setItem(KEY,"yes"); }catch(e){} }
+function isCleared(){ try{ return localStorage.getItem(KEY)==="yes"; }catch(e){ return false; } }
+function resetProgress(){ try{ localStorage.removeItem(KEY); }catch(e){} }
+
+if(q.get("reset")==="1"){ resetProgress(); }
+
+// モード判定：?extra=1 か、第1段階クリア済みなら「エクストラ」
+const isExtra = q.get("extra")==="1" || isCleared();
+
+/* ---- 画面切り替え ---- */
+function show(id){
+  document.querySelectorAll(".stage").forEach(el=>el.classList.remove("active"));
+  $(id).classList.add("active");
+}
+
+/* ---- アンビエンス生成 ---- */
+(function ambient(){
+  const box = $("#ambient");
+  const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
+  if(reduce) return;
+  for(let i=0;i<26;i++){
+    const b=document.createElement("div"); b.className="bubble";
+    const size=2+Math.random()*7;
+    b.style.width=b.style.height=size+"px";
+    b.style.left=Math.random()*100+"%";
+    b.style.setProperty("--drift",(Math.random()*40-20)+"px");
+    b.style.animationDuration=(9+Math.random()*12)+"s";
+    b.style.animationDelay=(-Math.random()*16)+"s";
+    box.appendChild(b);
+  }
+  /* クラゲは背景画像に含まれるため、水の動き（泡）のみ残す */
+})();
+
+/* ---- タイムコード（VHS演出） ---- */
+(function tc(){
+  const el=$("#tc"); const start=Date.now();
+  setInterval(()=>{
+    const t=Math.floor((Date.now()-start)/1000);
+    const hh=String(Math.floor(t/3600)).padStart(2,"0");
+    const mm=String(Math.floor(t/60)%60).padStart(2,"0");
+    const ss=String(t%60).padStart(2,"0");
+    const ff=String(Math.floor((Date.now()-start)/33)%30).padStart(2,"0");
+    el.textContent=`SP  ${hh}:${mm}:${ss}:${ff}`;
+  },33);
+})();
+
+/* ---- 2回目：画面は“さっきと同じ”ままに、違和感だけ差し込む（デジャヴュ） ---- */
+if(isExtra){
+  const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
+  const lead = $("#startLead");
+  const normalLead = "深海から届いたこの一本のビデオテープ・・・<br>本当に再生の準備はいいか？";
+  // 目立たない“再入場”の刻印
+  document.querySelector(".eyebrow").textContent = "TAKESHIMA AQUARIUM ／ 深海調査記録 ／ RE-ENTRY";
+  document.querySelector(".rec").firstChild &&
+    (document.querySelector(".rec").childNodes[document.querySelector(".rec").childNodes.length-1].textContent = "RE:REC ●");
+
+  if(reduce || !CONFIG.dejavuLine){
+    lead.innerHTML = normalLead;
+  } else {
+    // ロード直後：トラッキング・グリッチ → タイトル揺れ → デジャヴュ字幕 → 通常文言へ差し替え
+    lead.textContent = CONFIG.dejavuLine;
+    lead.classList.add("dejavu");
+    setTimeout(()=>{
+      $("#tracking").classList.add("run");
+      document.querySelector(".vtitle").classList.add("shudder");
+    }, 350);
+    setTimeout(()=>{
+      lead.classList.remove("dejavu");
+      lead.classList.add("glitchout");
+      lead.addEventListener("animationend", function done(){
+        lead.removeEventListener("animationend", done);
+        lead.classList.remove("glitchout");
+        lead.innerHTML = normalLead;
+        lead.classList.add("glitchin");
+        $("#tracking").classList.remove("run");
+        document.querySelector(".vtitle").classList.remove("shudder");
+      });
+    }, 2000);
+  }
+}
+
+/* ---- 動画再生 ---- */
+const player = $("#player");
+const videoWrap = $("#videoWrap");
+const skipBtn = $("#skipBtn");
+const loader  = $("#loader");
+const tapPlay = $("#tapPlay");
+if(DEV) skipBtn.style.display="block";
+
+function playVideo(url, onEnd){
+  if(CONFIG.introPoster) player.setAttribute("poster",CONFIG.introPoster);
+  player.src=url;
+  videoWrap.classList.add("show");
+  loader.classList.add("show");
+  tapPlay.classList.remove("show");
+
+  let done=false;                       // ← 多重発火（二重遷移）防止
+  const finish=()=>{
+    if(done) return; done=true;
+    player.onended=null; player.onerror=null;
+    clearTimeout(watchdog);
+    loader.classList.remove("show");
+    tapPlay.classList.remove("show");
+    videoWrap.classList.remove("show");
+    try{ player.pause(); }catch(e){}
+    onEnd();
+  };
+
+  player.onended = ()=>{ track("video_end"); finish(); };
+  skipBtn.onclick = finish;
+
+  // 【安全弁】動画が読み込めない場合は止まらず次へ進める
+  player.onerror = ()=>{ track("video_error"); finish(); };
+  let watchdog = setTimeout(()=>{
+    // 一定時間たっても1フレームも再生できていない＝配信不良とみなして進行
+    if(!done && player.readyState < 2){ track("video_stall"); finish(); }
+  }, 12000);
+
+  const onPlaying = ()=>{ loader.classList.remove("show"); clearTimeout(watchdog); };
+  player.addEventListener("playing", onPlaying, { once:true });
+
+  // 【自動再生ブロック対策】失敗時はSKIPではなく「タップして再生」を出す（音を鳴らすため）
+  const p = player.play();
+  if(p && p.catch){
+    p.catch(()=>{
+      loader.classList.remove("show");
+      tapPlay.classList.add("show");
+      tapPlay.onclick = ()=>{
+        tapPlay.classList.remove("show");
+        loader.classList.add("show");
+        player.play().catch(()=>{ /* それでも不可なら安全弁で進行 */ finish(); });
+      };
+    });
+  }
+}
+
+/* ---- ① スタート → 動画 → ③ 回答 ---- */
+$("#playBtn").addEventListener("click", ()=>{
+  track("play_start", { stage: isExtra?2:1 });
+  playVideo(CONFIG.introVideoUrl, ()=> setupAnswer());
+});
+
+/* ---- ③ 回答フォームの準備（モード別） ---- */
+function setupAnswer(){
+  const stage2 = isExtra;
+  $("#ansEyebrow").textContent = stage2 ? "TRUE ENDING CODE" : "FINAL CODE";
+  $("#ansTitle").textContent   = stage2 ? "真の答えを入力せよ" : "最後の暗号を入力せよ";
+  $("#ansHint").textContent    = stage2
+      ? "エクストラ問題が導く、本当の結末のことば。"
+      : "これまでの謎がすべて指し示す、ひとつの言葉。";
+  $("#ansMsg").textContent=""; $("#ansMsg").className="msg";
+  $("#ansInput").value="";
+  show("#s-answer");
+  setTimeout(()=>$("#ansInput").focus(),300);
+}
+
+let wrongCount=0;
+let judging=false;               // ← 二重送信ロック
+function judge(){
+  if(judging) return;
+  const val=norm($("#ansInput").value);
+  const list=answersFor(isExtra?CONFIG.stage2Answers:CONFIG.stage1Answers);
+  const msg=$("#ansMsg");
+  if(!val){ return; }
+  if(list.includes(val)){
+    judging=true;
+    $("#ansBtn").disabled=true;
+    $("#ansInput").blur();
+    msg.className="msg ok"; msg.textContent="正解。";
+    track(isExtra?"stage2_clear":"stage1_clear");
+    if(isExtra){ toTrueEnding(); } else { toClear(); }
+  }else{
+    wrongCount++;
+    track("answer_wrong", { stage: isExtra?2:1, count: wrongCount });
+    msg.className="msg err";
+    const card=$(".form-card"); card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
+    let t="…違う気がする。もう一度。";
+    const hint=isExtra?CONFIG.stage2Hint:CONFIG.stage1Hint;
+    if(CONFIG.wrongHintAfter && wrongCount>=CONFIG.wrongHintAfter && hint){ t="ヒント：" + hint; }
+    msg.textContent=t;
+  }
+}
+$("#ansBtn").addEventListener("click", judge);
+$("#ansInput").addEventListener("keydown", e=>{ if(e.key==="Enter") judge(); });
+
+/* ---- ④ 第1段階クリア → ショップ提示 ---- */
+function toClear(){
+  saveCleared();
+  // 提示用の“それっぽい”チケット番号（日付＋ランダム）
+  const d=new Date();
+  const ymd=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+  const rnd=Math.floor(1000+Math.random()*9000);
+  $("#clearTicket").textContent=`TICKET  ${ymd}-${rnd}`;
+  setTimeout(()=>show("#s-clear"), 500);
+}
+
+/* ---- ⑤ 第2段階クリア → 真エンディング動画 → アンケート ---- */
+function toTrueEnding(){
+  setTimeout(()=>{
+    show("#s-truth");
+    setTimeout(()=>{
+      playVideo(CONFIG.endingVideoUrl, ()=>{
+        // 動画終了後、アンケートへ
+        track("go_survey");
+        setTimeout(()=>{ location.href=CONFIG.surveyUrl; }, CONFIG.surveyDelayMs);
+      });
+    }, 1400);
+  }, 500);
+}
+
+/* ---- RESET ---- */
+$("#resetLink").addEventListener("click", e=>{
+  e.preventDefault();
+  resetProgress();
+  location.href = location.pathname;
+});
+</script>
+</body>
+</html>
