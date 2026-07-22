@@ -48,7 +48,10 @@ body{
     radial-gradient(140% 100% at 50% -10%, #0a3247 0%, #05202c 38%, var(--deep) 78%);
   background-color:#04121a;
   min-height:100dvh;
-  overflow:hidden;
+  overflow-x:hidden;
+  overflow-y:auto;              /* ← ボタンが画面外に出ても届くように */
+  -webkit-overflow-scrolling:touch;
+  background-attachment:fixed;  /* スクロールしても背景は動かない */
   position:relative;
 }
 
@@ -82,14 +85,22 @@ body{
   box-shadow:inset 0 0 200px 40px rgba(0,0,0,.75); }
 
 /* 発光する黄緑の縦破線（クリアファイルの意匠） */
-/* 発光する黄緑の縦破線 → 背景画像に含まれるため非表示 */
+/* 発光する黄緑の縦破線：タイトルを挟む位置にCSSで描画（常に中央で揃う） */
 .railL,.railR{ display:none; }
+.title-rail{ position:relative; display:flex; align-items:center; justify-content:center;
+  gap:clamp(14px,4vw,22px); }
+.title-rail::before, .title-rail::after{
+  content:""; align-self:stretch; width:0;
+  border-left:2px dashed #e9e800; box-shadow:0 0 10px rgba(233,232,0,.45); opacity:.95;
+}
 
 /* ---- ステージ共通レイアウト ---- */
 .stage{
   position:relative; z-index:10; min-height:100dvh;
   display:none; flex-direction:column; align-items:center; justify-content:center;
-  text-align:center; padding:min(9vh,72px) 30px; gap:26px;
+  text-align:center;
+  padding:calc(44px + env(safe-area-inset-top)) 24px calc(34px + env(safe-area-inset-bottom));
+  gap:clamp(12px,2.4vh,22px);
   animation:fadeIn .7s ease both;
 }
 .stage.active{ display:flex; }
@@ -107,26 +118,51 @@ body{
 
 /* 縦組みタイトル */
 .vtitle{ writing-mode:vertical-rl; font-family:var(--serif); font-weight:800;
-  font-size:clamp(30px,7.4vw,52px); line-height:1.5; letter-spacing:.14em;
-  text-shadow:0 0 26px rgba(0,0,0,.6); }
+  font-size:clamp(19px, min(6.6vw, 3.4vh), 46px); line-height:1.5; letter-spacing:.12em;
+  white-space:nowrap; text-shadow:0 0 26px rgba(0,0,0,.6); }
 .vtitle .accent{ color:var(--orange); }
 
 h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
   font-size:clamp(30px,8vw,58px); line-height:1.28; }
-.lead{ font-size:clamp(14px,3.6vw,16px); line-height:2; color:var(--dim); max-width:34ch; }
+.lead{ font-size:clamp(11px, 3.55vw, 16px); line-height:2.1; color:var(--dim);
+  letter-spacing:.02em; white-space:nowrap; max-width:100%; }
 
-/* ボタン */
-.btn{ font-family:var(--sans); font-weight:700; font-size:16px; letter-spacing:.06em;
-  color:var(--deep); background:var(--orange); border:none; border-radius:999px;
-  padding:17px 42px; cursor:pointer; position:relative;
-  box-shadow:0 0 0 1px rgba(255,255,255,.15), 0 10px 30px rgba(224,103,59,.35);
-  transition:transform .12s ease, box-shadow .2s ease; }
-.btn:hover{ transform:translateY(-2px); box-shadow:0 0 0 1px rgba(255,255,255,.25), 0 16px 40px rgba(224,103,59,.5); }
-.btn:active{ transform:translateY(0); }
-.btn.ghost{ background:transparent; color:var(--cream);
-  box-shadow:inset 0 0 0 1.5px var(--line); }
-.btn:focus-visible{ outline:3px solid var(--lime); outline-offset:3px; }
-.tape-ico{ display:inline-block; vertical-align:-2px; margin-right:10px; }
+/* ボタン：VHSデッキの操作ボタンを模した質感 */
+.btn{
+  position:relative; display:inline-flex; flex-direction:column; align-items:center; gap:5px;
+  font-family:var(--serif); font-weight:700; font-size:clamp(15px,4vw,18px); letter-spacing:.22em;
+  color:var(--cream); cursor:pointer; padding:15px 34px 14px; border-radius:3px;
+  border:1px solid rgba(233,232,0,.45);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.02) 42%, rgba(0,0,0,.30) 100%),
+    rgba(6,22,30,.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.22),
+    inset 0 -3px 8px rgba(0,0,0,.55),
+    0 10px 28px rgba(0,0,0,.55),
+    0 0 26px rgba(233,232,0,.10);
+  backdrop-filter:blur(4px); overflow:hidden;
+  transition:border-color .2s ease, box-shadow .25s ease, transform .08s ease;
+}
+/* テープが走るような光の帯 */
+.btn::after{
+  content:""; position:absolute; top:0; left:-60%; width:45%; height:100%;
+  background:linear-gradient(100deg, transparent, rgba(233,232,0,.16), transparent);
+  animation:sheen 4.2s ease-in-out infinite;
+}
+@keyframes sheen{ 0%,62%{ left:-60%; } 92%,100%{ left:115%; } }
+.btn .plabel{ font-family:var(--mono); font-size:10px; letter-spacing:.42em; padding-left:.42em;
+  color:var(--lime); font-weight:500; }
+.btn .jlabel{ display:inline-flex; align-items:center; gap:11px; }
+.btn:hover{ border-color:rgba(233,232,0,.85);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 -3px 8px rgba(0,0,0,.5),
+              0 14px 36px rgba(0,0,0,.6), 0 0 34px rgba(233,232,0,.22); }
+.btn:active{ transform:translateY(2px);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,.75), 0 3px 10px rgba(0,0,0,.5); }
+.btn:focus-visible{ outline:2px solid var(--lime); outline-offset:3px; }
+.btn:disabled{ opacity:.55; cursor:default; }
+.btn.ghost{ background:transparent; border-color:var(--line); }
+.tape-ico{ display:inline-block; }
 
 .sound-note{ font-size:12.5px; letter-spacing:.04em; color:var(--dim); line-height:1.8; margin-top:-8px; }
 
@@ -144,9 +180,10 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
 
 /* 自動再生がブロックされた時のタップ再生 */
 .tapplay{ position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:24; display:none;
-  font-family:var(--sans); font-weight:700; font-size:16px; letter-spacing:.06em; color:var(--deep);
-  background:var(--orange); border:none; border-radius:999px; padding:18px 40px; cursor:pointer;
-  box-shadow:0 0 0 1px rgba(255,255,255,.2), 0 12px 34px rgba(224,103,59,.45); }
+  font-family:var(--serif); font-weight:700; font-size:17px; letter-spacing:.2em; color:var(--cream);
+  border:1px solid rgba(233,232,0,.5); border-radius:3px; padding:16px 34px; cursor:pointer;
+  background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.35)), rgba(6,22,30,.72);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 12px 34px rgba(0,0,0,.6), 0 0 30px rgba(233,232,0,.16); }
 .tapplay.show{ display:block; }
 
 .skip{ position:fixed; bottom:26px; right:26px; z-index:22; font-family:var(--mono);
@@ -181,9 +218,10 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
 .ticket{ margin-top:10px; font-family:var(--mono); font-size:12px; letter-spacing:.22em; color:var(--dim); }
 .next-note{ margin-top:20px; font-size:13px; color:var(--dim); max-width:30ch; line-height:1.9; }
 
-.tiny-link{ position:fixed; bottom:14px; left:50%; transform:translateX(-50%); z-index:30;
+.tiny-link{ position:fixed; bottom:8px; left:10px; z-index:30; display:none;
   font-family:var(--mono); font-size:10px; letter-spacing:.18em; color:rgba(245,237,224,.3);
   text-decoration:none; }
+.tiny-link.show{ display:block; }
 .tiny-link:hover{ color:var(--lime); }
 
 /* ---- デジャヴュ演出（2回目だけ発動） ---- */
@@ -231,14 +269,18 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
 <!-- ① スタート -->
 <section class="stage active" id="s-start">
   <div class="eyebrow">TAKESHIMA AQUARIUM ／ 深海調査記録</div>
-  <div class="vtitle">この水族館、<span class="accent">なんか変。</span></div>
+  <div class="title-rail"><div class="vtitle">この水族館、<span class="accent">なんか変。</span></div></div>
   <p class="lead" id="startLead">深海から一本のビデオテープが届いた。<br>これは本当に水族館にあるビデオテープだから・・・</p>
   <button class="btn" id="playBtn">
-    <svg class="tape-ico" width="22" height="16" viewBox="0 0 22 16" fill="none">
-      <rect x="1" y="1" width="20" height="14" rx="2.5" stroke="#04121a" stroke-width="1.6"/>
-      <circle cx="7.5" cy="8" r="2.4" stroke="#04121a" stroke-width="1.6"/>
-      <circle cx="14.5" cy="8" r="2.4" stroke="#04121a" stroke-width="1.6"/>
-    </svg>テープを再生する
+    <span class="plabel">PLAY ▶</span>
+    <span class="jlabel">
+      <svg class="tape-ico" width="26" height="18" viewBox="0 0 26 18" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="24" height="16" rx="2" stroke="#e9e800" stroke-width="1.2" opacity=".85"/>
+        <circle cx="8.5" cy="9" r="3.1" stroke="#f5ede0" stroke-width="1.2"/>
+        <circle cx="17.5" cy="9" r="3.1" stroke="#f5ede0" stroke-width="1.2"/>
+        <circle cx="8.5" cy="9" r=".9" fill="#e9e800"/><circle cx="17.5" cy="9" r=".9" fill="#e9e800"/>
+      </svg>テープを再生する
+    </span>
   </button>
   <p class="sound-note">🔊 音が出ます。マナーモードを解除して、音量を上げてね。</p>
 </section>
@@ -259,7 +301,7 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
     <p class="hint" id="ansHint">これまでの謎がすべて指し示す、ひとつの言葉。</p>
     <input class="answer-input" id="ansInput" type="text" inputmode="text"
            autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="こたえ">
-    <button class="btn" id="ansBtn">送信する</button>
+    <button class="btn" id="ansBtn"><span class="plabel">ENTER</span><span class="jlabel">送信する</span></button>
     <div class="msg" id="ansMsg" role="status" aria-live="polite"></div>
   </div>
 </section>
@@ -449,7 +491,7 @@ const videoWrap = $("#videoWrap");
 const skipBtn = $("#skipBtn");
 const loader  = $("#loader");
 const tapPlay = $("#tapPlay");
-if(DEV) skipBtn.style.display="block";
+if(DEV){ skipBtn.style.display="block"; $("#resetLink").classList.add("show"); }
 
 function playVideo(url, onEnd){
   if(CONFIG.introPoster) player.setAttribute("poster",CONFIG.introPoster);
