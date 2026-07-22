@@ -414,8 +414,6 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
       <span class="plabel">PLAY ▶</span>
       <span class="jlabel">エンディングを見る</span>
     </button>
-    <p class="prize-note">このあとのアンケートに答えると、抽選で<br>
-      <strong>水族館のペア入館券</strong>や<strong>オリジナルグッズ詰め合わせ（1万円相当）</strong><br>が当たるかもしれないぞ。</p>
   </div>
 </section>
 
@@ -625,6 +623,12 @@ function playVideo(url, onEnd){
   player.onended = ()=>{ track("video_end"); finish(); };
   skipBtn.onclick = finish;
 
+  // iPhoneで全画面再生になった場合、閉じた時点で再生終了とみなす
+  const onExitFS = ()=>{
+    if(!done && (player.ended || player.currentTime >= (player.duration||0) - 0.5)) finish();
+  };
+  player.addEventListener("webkitendfullscreen", onExitFS, { once:true });
+
   // 【安全弁】動画が読み込めない場合は止まらず次へ進める
   player.onerror = ()=>{ track("video_error"); finish(); };
   watchdog = setTimeout(()=>{
@@ -780,6 +784,23 @@ function doRedeem(){
 $("#staffOk").addEventListener("click", doRedeem);
 $("#staffPass").addEventListener("keydown", e=>{ if(e.key==="Enter") doRedeem(); });
 
+/* ---- アンケートへの遷移（確実に飛ばすための処理） ---- */
+function goSurvey(){
+  // iPhoneで動画が全画面のままだと遷移が止まることがあるため、先に解除する
+  try{
+    if(document.exitFullscreen) document.exitFullscreen();
+    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    else if(player.webkitExitFullscreen) player.webkitExitFullscreen();
+  }catch(e){}
+
+  const url = CONFIG.surveyUrl;
+  // 万一そのまま飛ばなかった時のために、完了画面（アンケートボタン付き）を用意しておく
+  setTimeout(()=>{ show("#s-done"); }, CONFIG.surveyDelayMs + 2500);
+  setTimeout(()=>{
+    try{ location.replace(url); }catch(e){ location.href = url; }
+  }, CONFIG.surveyDelayMs);
+}
+
 /* ---- ⑤ 第2段階クリア → メッセージ → 真エンディング → アンケート ---- */
 const FINISH_KEY = "takeshima_finished";
 function isFinished(){ try{ return localStorage.getItem(FINISH_KEY)==="yes"; }catch(e){ return false; } }
@@ -794,8 +815,12 @@ $("#endBtn").addEventListener("click", ()=>{
   track("ending_start");
   playVideo(CONFIG.endingVideoUrl, ()=>{
     track("go_survey");
-    setTimeout(()=>{ location.href=CONFIG.surveyUrl; }, CONFIG.surveyDelayMs);
+    goSurvey();
   });
+});
+// アンケートへ戻ってきた場合の再遷移用
+$("#surveyBtn").addEventListener("click", ()=>{
+  location.href = CONFIG.surveyUrl;
 });
 // アンケートへ戻ってきた場合の再遷移用
 $("#surveyBtn").addEventListener("click", ()=>{
