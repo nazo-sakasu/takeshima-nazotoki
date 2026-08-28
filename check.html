@@ -27,8 +27,8 @@ body{
   font-family:var(--sans); color:var(--cream); min-height:100dvh;
   /* 読みやすさ優先で背景は濃いスクリムをかける */
   background:
-    linear-gradient(rgba(3,12,18,.86), rgba(3,12,18,.92)),
-    url('bg.webp') center center / cover no-repeat fixed,
+    linear-gradient(rgba(3,10,15,.9), rgba(3,10,15,.95)),
+    url('check-bg.webp') center top / cover no-repeat fixed,
     #04121a;
   padding:0 0 60px;
 }
@@ -130,7 +130,7 @@ footer{ text-align:center; margin-top:30px; font-size:11px; color:rgba(245,237,2
   <header>
     <div class="eyebrow">ANSWER CHECK</div>
     <h1>答え合わせ</h1>
-    <p class="sub">解けた問題の答えを入れて、確かめてみよう。<br>合っていれば、次に進めるよ。</p>
+    <p class="sub">解けた問題の答えを入れて、確かめてみよう。</p>
     <div class="progress" id="progress" aria-hidden="true"></div>
     <div class="count" id="count">0 / 7</div>
   </header>
@@ -139,9 +139,7 @@ footer{ text-align:center; margin-top:30px; font-size:11px; color:rgba(245,237,2
 
   <div class="finale" id="finale">
     <h2>７問すべて、正解。</h2>
-    <p>よくここまでたどり着いた。<br>
-       最後の答えが示す<span class="mark">「あれ」</span>を館内で探し、<br>
-       その場所のQRコードを読み込もう。</p>
+    <p>問題7の答え<span class="mark">【ビデオテープ】</span>を<br>館内で探し、ハガキを開こう！</p>
   </div>
 
   <div class="linebox" id="lineBox">
@@ -165,29 +163,29 @@ footer{ text-align:center; margin-top:30px; font-size:11px; color:rgba(245,237,2
    ===================================================================== */
 
 // ▼ LINEのURL（公式アカウントの友だち追加URLなど）。空にすると案内は非表示
-const LINE_URL  = "";
+const LINE_URL  = "https://lin.ee/totsOhQ";
 const LINE_TEXT = "答えが分からないときは、LINEでヒントを確認しよう！";
 
 const QUESTIONS = [
-  { no:"問1", name:"ストーリー（調査ノート＋定規）",
+  { no:"問1", name:"赤い印が示すものは？",
     answers:["現実","げんじつ"] },
 
-  { no:"問2", name:"タカアシガニ フォトスポット",
+  { no:"問2", name:"写真を正しく直して、示される言葉は？",
     answers:["写真","しゃしん"] },
 
-  { no:"問3", name:"タカアシガニ 魚歴書",
+  { no:"問3", name:"共通する言葉は？",
     answers:["深海","しんかい"] },
 
-  { no:"問4", name:"アシカプール看板",
+  { no:"問4", name:"看板を元の姿に戻して、示された物は？",
     answers:["イソギンチャク","いそぎんちゃく"] },
 
-  { no:"問5", name:"タケシマンション",
+  { no:"問5", name:"住人たちに確認して、出てきた答えは？",
     answers:["アミ","あみ","網","アミ（網）"] },
 
-  { no:"問6", name:"ウツボ軍団 感謝状",
+  { no:"問6", name:"黒く塗りつぶして、出てきた言葉は？",
     answers:["展示","てんじ","テンジ","展示（テンジ）"] },
 
-  { no:"問7", name:"最後の問題",
+  { no:"問7", name:"手元にあるものが示した言葉は？",
     answers:["ビデオテープ","びでおてーぷ","VIDEOTAPE"] },
 ];
 const LINE_NUDGE_AFTER = 2;   // 何回まちがえたらLINEヒントを案内するか
@@ -283,7 +281,7 @@ function check(i){
   if(!val) return;
   if(q.answers.map(norm).includes(val)){
     markOk(i,"ok");
-    msg.className="msg ok"; msg.textContent="正解！ この調子で進もう。";
+    msg.className="msg ok"; msg.textContent="正解！";
   }else{
     wrong[i]=(wrong[i]||0)+1;
     msg.className="msg err";
