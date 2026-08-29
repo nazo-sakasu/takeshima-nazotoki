@@ -444,15 +444,11 @@ const CONFIG = {
 
   // ▼ 正解（配列で複数の表記ゆれを登録可。全角/半角・大文字小文字・カタカナ/ひらがなは自動吸収）
   stage1Answers : ["message", "メッセージ", "メツセージ"],        // ← 第1段階＝ message
-  stage2Answers : ["竹島", "たけしま", "takeshima"],              // ← 第2段階※仮。確定したら差し替え
+  stage2Answers : ["70周年","70しゅうねん","70シュウネン","ななじゅっしゅうねん",
+                   "なぬしゅうねん","70","七十周年","七〇周年","七十","70周年"],   // ← 第2段階＝70周年（「70」だけでも正解）
 
   // ▼ 2回目（エクストラ）で一瞬だけ流れる“デジャヴュ”字幕
   dejavuLine    : "……前にも、これを見た気がする。",
-
-  // ▼ 誤答ヒント（○回間違えたら表示。空にすれば非表示）
-  wrongHintAfter: 3,
-  stage1Hint    : "落ち着いて。手がかりはすべて館内にある。",
-  stage2Hint    : "エクストラ問題の指示をもう一度読んでみよう。",
 
   // ▼ 真エンディング後に飛ぶGoogleフォーム
   surveyUrl     : "https://docs.google.com/forms/d/e/1FAIpQLSefg3hXoKpUU_NXskBISIM-Pdy24Qi7zzpMs_hBZTLrdBxmvw/viewform?usp=header",
@@ -497,6 +493,7 @@ function norm(s){
     .trim()
     .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0))
     .replace(/[\s\u3000]/g,"")
+    .replace(/[！!？?。、．，・…ー―−\-~〜"'"'`]+$/g,"")   // 末尾の記号は無視
     .replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0)+0x60))
     .toUpperCase();
 }
@@ -664,9 +661,9 @@ $("#playBtn").addEventListener("click", ()=>{
 function setupAnswer(){
   const stage2 = isExtra;
   $("#ansEyebrow").textContent = stage2 ? "TRUE ENDING CODE" : "FINAL CODE";
-  $("#ansTitle").textContent   = stage2 ? "真の答えを入力せよ" : "最後の暗号を入力せよ";
+  $("#ansTitle").textContent   = stage2 ? "本当の最後の回答" : "最後の暗号を入力せよ";
   $("#ansHint").textContent    = stage2
-      ? "エクストラ問題が導く、本当の結末のことば。"
+      ? "ここまで本当にありがとう。"
       : "これまでの謎がすべて指し示す、ひとつの言葉。";
   $("#ansMsg").textContent=""; $("#ansMsg").className="msg";
   $("#ansInput").value="";
@@ -694,10 +691,7 @@ function judge(){
     track("answer_wrong", { stage: isExtra?2:1, count: wrongCount });
     msg.className="msg err";
     const card=$(".form-card"); card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
-    let t="…違う気がする。もう一度。";
-    const hint=isExtra?CONFIG.stage2Hint:CONFIG.stage1Hint;
-    if(CONFIG.wrongHintAfter && wrongCount>=CONFIG.wrongHintAfter && hint){ t="ヒント：" + hint; }
-    msg.textContent=t;
+    msg.textContent="…違う気がする。もう一度。";
   }
 }
 $("#ansBtn").addEventListener("click", judge);
