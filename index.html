@@ -193,8 +193,12 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
   font-size:12px; letter-spacing:.2em; color:var(--dim); background:rgba(0,0,0,.4);
   border:1px solid rgba(245,237,224,.25); border-radius:999px; padding:9px 18px; cursor:pointer; display:none; }
 
+/* 回答画面では背景の黄色い線を隠す（TVに集中させる） */
+#s-answer::before{ content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:radial-gradient(120% 80% at 50% 50%, rgba(4,14,20,.97) 0%, rgba(4,14,20,.92) 45%, rgba(4,14,20,.8) 100%); }
+
 /* ---- 回答フォーム（ブラウン管TV） ---- */
-.tv{ position:relative; width:min(430px,100%); aspect-ratio:396/247;
+.tv{ position:relative; width:min(480px,100%); aspect-ratio:396/247;
   background:url('tv.webp') center center / 100% 100% no-repeat;
   filter:drop-shadow(0 18px 40px rgba(0,0,0,.65)); }
 
@@ -213,21 +217,23 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
   background:repeating-linear-gradient(to bottom, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
   box-shadow:inset 0 0 30px 8px rgba(0,0,0,.6); }
 
-.tv-inner{ position:relative; z-index:2; width:100%; padding:5% 7%; text-align:center;
-  display:flex; flex-direction:column; align-items:center; gap:2.5%; }
-.tv-inner h2{ font-family:var(--serif); font-weight:700;
-  font-size:clamp(13px,3.9vw,19px); letter-spacing:.05em; line-height:1.35;
-  text-shadow:0 0 12px rgba(199,217,58,.35); }
-.tv-inner p.hint{ font-size:clamp(9.5px,2.6vw,12px); color:var(--dim); line-height:1.6; }
-.answer-input{ width:86%; font-family:var(--serif); font-size:clamp(17px,5.2vw,24px); text-align:center;
-  letter-spacing:.14em; color:var(--cream); background:rgba(0,0,0,.42);
-  border:none; border-bottom:2px solid var(--line); padding:5px 6px 3px; outline:none; }
-.answer-input::placeholder{ color:rgba(245,237,224,.25); letter-spacing:.1em; font-size:.72em; }
+.tv-inner{ position:relative; z-index:2; width:100%; padding:3% 4%; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:1.5%; }
+.tv-inner h2{ font-family:var(--serif); font-weight:800;
+  font-size:clamp(17px, 5.6vw, 27px); letter-spacing:.02em; line-height:1.25;
+  white-space:nowrap; text-shadow:0 0 14px rgba(199,217,58,.4);
+  transform-origin:center; }
+.tv-inner p.hint{ font-size:clamp(10.5px, 3.05vw, 14px); color:rgba(245,237,224,.72);
+  line-height:1.45; letter-spacing:-.01em; white-space:nowrap; transform-origin:center; }
+.answer-input{ width:94%; font-family:var(--serif); font-size:clamp(22px, 7.2vw, 34px); text-align:center;
+  letter-spacing:.1em; color:var(--cream); background:rgba(0,0,0,.42);
+  border:none; border-bottom:2px solid var(--line); padding:4px 4px 2px; outline:none; }
+.answer-input::placeholder{ color:rgba(245,237,224,.28); letter-spacing:.08em; font-size:.62em; }
 .answer-input:focus{ border-color:var(--lime); }
-.msg{ min-height:14px; font-size:clamp(9.5px,2.6vw,12px); letter-spacing:.03em; line-height:1.5; }
+.msg{ min-height:13px; font-size:clamp(10.5px, 3vw, 13px); letter-spacing:.02em; line-height:1.4; }
 .msg.err{ color:#ff8a6b; }
 .msg.ok{ color:var(--lime); }
-#ansBtn{ width:min(430px,100%); }
+#ansBtn{ width:min(480px,100%); }
 .shake{ animation:shake .4s; }
 @keyframes shake{ 0%,100%{transform:none} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
 
@@ -342,7 +348,7 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
 <section class="stage active" id="s-start">
   <div class="eyebrow">TAKESHIMA AQUARIUM ／ 深海調査記録</div>
   <div class="title-rail"><div class="vtitle">この水族館、<span class="accent">なんか変。</span></div></div>
-  <p class="lead" id="startLead">深海から一本のビデオテープが届いた。<br>これは本当に水族館にあるビデオテープだから・・・</p>
+  <p class="lead" id="startLead">深海から一本のビデオテープが届いた。</p>
   <button class="btn" id="playBtn">
     <span class="plabel">PLAY ▶</span>
     <span class="jlabel">
@@ -372,8 +378,8 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
     <div class="tv-screen">
       <div class="tv-noise" aria-hidden="true"></div>
       <div class="tv-inner">
-        <h2 id="ansTitle">最後の暗号を入力せよ</h2>
-        <p class="hint" id="ansHint">これまでの謎がすべて指し示す、ひとつの言葉。</p>
+        <h2 id="ansTitle">最後の答えを入力せよ</h2>
+        <p class="hint" id="ansHint">すべての謎が指し示す、ひとつの言葉。</p>
         <input class="answer-input" id="ansInput" type="text" inputmode="text"
                autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="こたえ">
         <div class="msg" id="ansMsg" role="status" aria-live="polite"></div>
@@ -686,15 +692,29 @@ $("#playBtn").addEventListener("click", ()=>{
 function setupAnswer(){
   const stage2 = isExtra;
   $("#ansEyebrow").textContent = stage2 ? "TRUE ENDING CODE" : "FINAL CODE";
-  $("#ansTitle").textContent   = stage2 ? "本当の最後の回答" : "最後の暗号を入力せよ";
+  $("#ansTitle").textContent   = stage2 ? "本当の最後の回答" : "最後の答えを入力せよ";
   $("#ansHint").textContent    = stage2
       ? "ここまで本当にありがとう。"
-      : "これまでの謎がすべて指し示す、ひとつの言葉。";
+      : "すべての謎が指し示す、ひとつの言葉。";
   $("#ansMsg").textContent=""; $("#ansMsg").className="msg";
   $("#ansInput").value="";
   show("#s-answer");
+  fitTvText();
   setTimeout(()=>$("#ansInput").focus(),300);
 }
+
+/* TV画面の幅いっぱいまで文字を大きく見せる（はみ出す分だけ自動で縮める） */
+function fitTvText(){
+  const box=$(".tv-inner"); if(!box) return;
+  const avail=box.clientWidth - (box.clientWidth*0.08);
+  [$("#ansTitle"), $("#ansHint")].forEach(el=>{
+    if(!el) return;
+    el.style.transform="none";
+    const w=el.scrollWidth;
+    if(w>avail && w>0) el.style.transform=`scaleX(${(avail/w).toFixed(3)})`;
+  });
+}
+window.addEventListener("resize", ()=>{ if($("#s-answer").classList.contains("active")) fitTvText(); });
 
 let wrongCount=0;
 let judging=false;               // ← 二重送信ロック
