@@ -193,21 +193,41 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
   font-size:12px; letter-spacing:.2em; color:var(--dim); background:rgba(0,0,0,.4);
   border:1px solid rgba(245,237,224,.25); border-radius:999px; padding:9px 18px; cursor:pointer; display:none; }
 
-/* ---- 回答フォーム ---- */
-.form-card{ width:min(440px,100%); background:rgba(5,26,36,.72);
-  border:1px solid rgba(199,217,58,.28); border-radius:20px; padding:30px 26px 28px;
-  backdrop-filter:blur(6px); box-shadow:0 24px 60px rgba(0,0,0,.5); }
-.form-card h2{ font-family:var(--serif); font-weight:700; font-size:22px; margin-bottom:6px; }
-.form-card p.hint{ font-size:13px; color:var(--dim); line-height:1.9; margin-bottom:20px; }
-.answer-input{ width:100%; font-family:var(--serif); font-size:26px; text-align:center;
-  letter-spacing:.14em; color:var(--cream); background:rgba(0,0,0,.35);
-  border:none; border-bottom:2px solid var(--line); padding:12px 8px 10px; outline:none; }
-.answer-input::placeholder{ color:rgba(245,237,224,.28); letter-spacing:.1em; font-size:18px; }
-.answer-input:focus{ border-color:var(--orange); }
-.form-card .btn{ width:100%; margin-top:22px; }
-.msg{ min-height:20px; margin-top:14px; font-size:13.5px; letter-spacing:.04em; }
+/* ---- 回答フォーム（ブラウン管TV） ---- */
+.tv{ position:relative; width:min(430px,100%); aspect-ratio:396/247;
+  background:url('tv.webp') center center / 100% 100% no-repeat;
+  filter:drop-shadow(0 18px 40px rgba(0,0,0,.65)); }
+
+/* 画像内の画面（砂嵐）の位置に合わせて重ねる */
+.tv-screen{ position:absolute; left:10.1%; top:11.3%; width:65.7%; height:73.7%;
+  border-radius:6%/8%; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 120% at 50% 45%, #123040 0%, #0a1e2a 55%, #04121a 100%); }
+
+/* 砂嵐＋走査線（画面の中だけ） */
+.tv-noise{ position:absolute; inset:0; pointer-events:none; opacity:.16; mix-blend-mode:screen;
+  background-image:url('tv.webp'); background-size:152% 136%; background-position:-10.1% -11.3%;
+  animation:tvflick .9s steps(3) infinite; }
+@keyframes tvflick{ 0%{ opacity:.13 } 50%{ opacity:.2 } 100%{ opacity:.15 } }
+.tv-screen::after{ content:""; position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(to bottom, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
+  box-shadow:inset 0 0 30px 8px rgba(0,0,0,.6); }
+
+.tv-inner{ position:relative; z-index:2; width:100%; padding:5% 7%; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:2.5%; }
+.tv-inner h2{ font-family:var(--serif); font-weight:700;
+  font-size:clamp(13px,3.9vw,19px); letter-spacing:.05em; line-height:1.35;
+  text-shadow:0 0 12px rgba(199,217,58,.35); }
+.tv-inner p.hint{ font-size:clamp(9.5px,2.6vw,12px); color:var(--dim); line-height:1.6; }
+.answer-input{ width:86%; font-family:var(--serif); font-size:clamp(17px,5.2vw,24px); text-align:center;
+  letter-spacing:.14em; color:var(--cream); background:rgba(0,0,0,.42);
+  border:none; border-bottom:2px solid var(--line); padding:5px 6px 3px; outline:none; }
+.answer-input::placeholder{ color:rgba(245,237,224,.25); letter-spacing:.1em; font-size:.72em; }
+.answer-input:focus{ border-color:var(--lime); }
+.msg{ min-height:14px; font-size:clamp(9.5px,2.6vw,12px); letter-spacing:.03em; line-height:1.5; }
 .msg.err{ color:#ff8a6b; }
 .msg.ok{ color:var(--lime); }
+#ansBtn{ width:min(430px,100%); }
 .shake{ animation:shake .4s; }
 @keyframes shake{ 0%,100%{transform:none} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
 
@@ -345,17 +365,22 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
   <div class="skip" id="skipBtn">▶▶ SKIP</div>
 </div>
 
-<!-- ③ 回答フォーム -->
+<!-- ③ 回答フォーム（ブラウン管TVの画面に表示） -->
 <section class="stage" id="s-answer">
   <div class="eyebrow" id="ansEyebrow">FINAL CODE</div>
-  <div class="form-card">
-    <h2 id="ansTitle">最後の暗号を入力せよ</h2>
-    <p class="hint" id="ansHint">これまでの謎がすべて指し示す、ひとつの言葉。</p>
-    <input class="answer-input" id="ansInput" type="text" inputmode="text"
-           autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="こたえ">
-    <button class="btn" id="ansBtn"><span class="plabel">ENTER</span><span class="jlabel">送信する</span></button>
-    <div class="msg" id="ansMsg" role="status" aria-live="polite"></div>
+  <div class="tv">
+    <div class="tv-screen">
+      <div class="tv-noise" aria-hidden="true"></div>
+      <div class="tv-inner">
+        <h2 id="ansTitle">最後の暗号を入力せよ</h2>
+        <p class="hint" id="ansHint">これまでの謎がすべて指し示す、ひとつの言葉。</p>
+        <input class="answer-input" id="ansInput" type="text" inputmode="text"
+               autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="こたえ">
+        <div class="msg" id="ansMsg" role="status" aria-live="polite"></div>
+      </div>
+    </div>
   </div>
+  <button class="btn" id="ansBtn"><span class="plabel">ENTER</span><span class="jlabel">送信する</span></button>
 </section>
 
 <!-- ④ 正解＝ショップ提示画面 -->
@@ -690,7 +715,7 @@ function judge(){
     wrongCount++;
     track("answer_wrong", { stage: isExtra?2:1, count: wrongCount });
     msg.className="msg err";
-    const card=$(".form-card"); card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
+    const card=$(".tv"); card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
     msg.textContent="…違う気がする。もう一度。";
   }
 }
