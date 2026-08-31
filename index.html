@@ -103,6 +103,10 @@ body{
   text-align:center;
   padding:calc(44px + env(safe-area-inset-top)) 24px calc(34px + env(safe-area-inset-bottom));
   gap:clamp(12px,2.4vh,22px);
+}
+#s-answer{
+  padding:calc(30px + env(safe-area-inset-top)) 20px calc(22px + env(safe-area-inset-bottom));
+  gap:clamp(8px,1.6vh,14px);
   animation:fadeIn .7s ease both;
 }
 .stage.active{ display:flex; }
@@ -197,20 +201,46 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
 #s-answer::before{ content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
   background:radial-gradient(120% 80% at 50% 50%, rgba(4,14,20,.97) 0%, rgba(4,14,20,.92) 45%, rgba(4,14,20,.8) 100%); }
 
+/* ---- 問題文パネル（2回目のみ表示） ---- */
+.qpanel{ display:none; width:min(480px,100%); flex-direction:column; align-items:center; gap:5px; }
+.qpanel.show{ display:flex; }
+.qlabel{ font-family:var(--mono); font-size:clamp(11px,3.2vw,14px); letter-spacing:.38em;
+  padding-left:.38em; color:var(--lime); text-shadow:0 0 12px rgba(199,217,58,.5); }
+.qframe{ position:relative; width:100%; padding:4.2% 5% 5.2%; overflow:hidden;
+  border:1.5px solid rgba(233,232,0,.8); border-radius:3px;
+  background:
+    repeating-linear-gradient(to bottom, rgba(255,255,255,.028) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 130% at 50% 40%, #0d2a1c 0%, #071a12 55%, #04100b 100%);
+  box-shadow:0 0 22px rgba(199,217,58,.14), inset 0 0 40px rgba(0,0,0,.8); }
+/* 四隅のかぎ括弧 */
+.qframe .c{ position:absolute; width:16px; height:16px; border:2px solid var(--lime); }
+.qframe .tl{ top:5px; left:5px; border-right:0; border-bottom:0; }
+.qframe .tr{ top:5px; right:5px; border-left:0; border-bottom:0; }
+.qframe .bl{ bottom:5px; left:5px; border-right:0; border-top:0; }
+.qframe .br{ bottom:5px; right:5px; border-left:0; border-top:0; }
+
+.qnums{ font-family:var(--serif); font-weight:700; color:var(--cream);
+  font-size:clamp(17px,5.5vw,28px); line-height:1.42; letter-spacing:.04em;
+  text-shadow:0 0 16px rgba(199,217,58,.25); }
+.qlead{ font-family:var(--serif); font-weight:700; color:var(--cream);
+  font-size:clamp(14px,4.3vw,22px); line-height:1.4; letter-spacing:.05em; margin-top:4px; }
+.qrec{ position:absolute; right:4%; bottom:3%; font-family:var(--mono);
+  font-size:clamp(7.5px,2.1vw,9.5px); letter-spacing:.14em; color:var(--orange); opacity:.9; }
+
 /* ---- 回答フォーム（ブラウン管TV） ---- */
-.tv{ position:relative; width:min(480px,100%); aspect-ratio:396/247;
+.tv{ position:relative; width:min(480px,100%); aspect-ratio:900/527;
   background:url('tv.webp') center center / 100% 100% no-repeat;
   filter:drop-shadow(0 18px 40px rgba(0,0,0,.65)); }
 
 /* 画像内の画面（砂嵐）の位置に合わせて重ねる */
-.tv-screen{ position:absolute; left:10.1%; top:11.3%; width:65.7%; height:73.7%;
+.tv-screen{ position:absolute; left:10%; top:12.7%; width:63.9%; height:73.1%;
   border-radius:6%/8%; overflow:hidden;
   display:flex; align-items:center; justify-content:center;
   background:radial-gradient(120% 120% at 50% 45%, #123040 0%, #0a1e2a 55%, #04121a 100%); }
 
 /* 砂嵐＋走査線（画面の中だけ） */
 .tv-noise{ position:absolute; inset:0; pointer-events:none; opacity:.16; mix-blend-mode:screen;
-  background-image:url('tv.webp'); background-size:152% 136%; background-position:-10.1% -11.3%;
+  background-image:url('tv.webp'); background-size:157% 137%; background-position:-15.6% -17.4%;
   animation:tvflick .9s steps(3) infinite; }
 @keyframes tvflick{ 0%{ opacity:.13 } 50%{ opacity:.2 } 100%{ opacity:.15 } }
 .tv-screen::after{ content:""; position:absolute; inset:0; pointer-events:none;
@@ -258,13 +288,16 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
   border-top:1px solid rgba(199,217,58,.3); }
 .tv-ticker.show{ display:flex; animation:tickerIn .6s ease both; }
 @keyframes tickerIn{ from{ opacity:0; transform:translateY(100%) } to{ opacity:1; transform:none } }
-.tv-ticker-inner{ display:inline-flex; white-space:nowrap; will-change:transform;
+.tv-ticker-inner{ display:flex; flex:0 0 auto; width:max-content; white-space:nowrap;
+  will-change:transform;
   font-family:var(--serif); font-weight:700; color:var(--lime);
   font-size:clamp(11px, 3.2vw, 15px); letter-spacing:.08em;
   text-shadow:0 0 10px rgba(199,217,58,.55);
-  animation:tickerScroll 17s linear infinite; }
+  animation:tickerScroll 26s linear infinite; }
 @keyframes tickerScroll{ from{ transform:translateX(0) } to{ transform:translateX(-50%) } }
-.tv-ticker-inner span{ padding:0 2.2em; }
+.tv-ticker-inner span{ flex:0 0 auto; padding:0 2.2em;
+  font-size:1em; line-height:1; font-feature-settings:"palt" 0;
+  font-variant-numeric:normal; letter-spacing:.08em; }
 /* テロップが出ている間は本文を少し上げる */
 .tv-screen.has-ticker .tv-inner{ padding-bottom:13%; }
 
@@ -397,6 +430,16 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
 
 <!-- ③ 回答フォーム（ブラウン管TVの画面に表示） -->
 <section class="stage" id="s-answer">
+  <div class="qpanel" id="qPanel">
+    <div class="qlabel">FINAL QUESTION</div>
+    <div class="qframe">
+      <span class="c tl"></span><span class="c tr"></span>
+      <span class="c bl"></span><span class="c br"></span>
+      <p class="qnums" id="qNums"></p>
+      <p class="qlead" id="qLead"></p>
+      <span class="qrec">RE:REC ●</span>
+    </div>
+  </div>
   <div class="eyebrow" id="ansEyebrow">FINAL CODE</div>
   <div class="tv">
     <div class="tv-screen">
@@ -513,13 +556,18 @@ const CONFIG = {
   surveyUrl     : "https://docs.google.com/forms/d/e/1FAIpQLSefg3hXoKpUU_NXskBISIM-Pdy24Qi7zzpMs_hBZTLrdBxmvw/viewform?usp=header",
   surveyDelayMs : 1200,   // エンディング動画終了後、フォームへ飛ぶまでの待ち時間
 
+  // ▼ 2回目（本当の最後の回答）の画面に出す問題文
+  //   数字を書き換えれば表示も変わります
+  questionNums  : "26・27・28・29・30・46・47・50・89・99・108・119・？",
+  questionLead  : "この文章に答えよ。",
+
   // ▼ 2回目（本当の最後の回答）だけに出るヒント
   //   ・TV下部にテロップで流れます。時間はページを開いてからの秒数
   //   ・リロードしても時間はリセットされません
   hint1AfterSec : 90,                                        // 第1弾が出るまで（秒）
   hint2AfterSec : 210,                                       // 第2弾が出るまで（秒）
-  hint1Text     : "ヒント①　1＝み",
-  hint2Text     : "ヒント②　26＝竹・27＝島・28＝水・29＝族・30＝館",
+  hint1Text     : "ヒント①　１＝み",
+  hint2Text     : "ヒント②　２６＝竹・２７＝島・２８＝水・２９＝族・３０＝館",
 
   // ▼ 店員用パスワード（参加賞の引換処理）
   staffPassword : "1956",
@@ -582,8 +630,9 @@ function resetProgress(){
 
 if(q.get("reset")==="1"){ resetProgress(); }
 
-// モード判定：?extra=1 か、第1段階クリア済みなら「エクストラ」
-const isExtra = q.get("extra")==="1" || isCleared();
+// モード判定：?extra=1 が付いている時だけ「エクストラ（2回目）」
+// ※1回目のQRは、クリア後にリロードしても必ず1回目のまま
+const isExtra = q.get("extra")==="1";
 
 /* ---- 画面切り替え ---- */
 function show(id){
@@ -800,6 +849,16 @@ function setupAnswer(){
       : "すべての謎が指し示す、ひとつの言葉。";
   $("#ansMsg").textContent=""; $("#ansMsg").className="msg";
   $("#ansInput").value="";
+
+  // 問題文パネルは2回目だけ表示
+  if(stage2){
+    $("#qNums").textContent = CONFIG.questionNums;
+    $("#qLead").textContent = CONFIG.questionLead;
+    $("#qPanel").classList.add("show");
+  }else{
+    $("#qPanel").classList.remove("show");
+  }
+
   show("#s-answer");
   fitTvText();
   startHints();
@@ -970,7 +1029,7 @@ $("#surveyBtn").addEventListener("click", ()=>{
 });
 // ブラウザの「戻る」で復帰した時も、誤って再生ボタンを押さないようにする
 window.addEventListener("pageshow", ()=>{
-  if(isFinished()) show("#s-done");
+  if(isExtra && isFinished()) show("#s-done");
 });
 
 /* ---- 起動時の画面判定 ----
@@ -978,12 +1037,19 @@ window.addEventListener("pageshow", ()=>{
    ・クリア済み＆参加賞まだ  → 引換画面（リロードしても店員に提示できる）
    ・クリア済み＆引換済み    → 2回目（エクストラ）スタート
    ※ ?extra=1 が付いていれば常にエクストラへ                          */
+/* ---- 起動時の画面判定 ----
+   ・?extra=1（カードQR） → 常に2回目。エンディング視聴済みなら完了画面
+   ・それ以外（1回目QR）  → 参加賞が未引換ならクリア画面、それ以外は最初から   */
 (function boot(){
-  // エンディングを見終わっていれば、以後は完了画面のみ（誤って再生しないように）
-  if(isFinished()){ show("#s-done"); return; }
+  if(isExtra){
+    // 2回目：エンディングを見終わっていれば完了画面のみ
+    if(isFinished()){ show("#s-done"); }
+    return;
+  }
+  // 1回目：参加賞がまだなら、店員に見せるクリア画面を再表示できるようにする
   const rec=getRedeem();
   const redeemed = !!(rec && rec.redeemed);
-  if(isCleared() && !redeemed && q.get("extra")!=="1"){
+  if(isCleared() && !redeemed){
     $("#clearTicket").textContent = "TICKET  " + getTicket();
     renderRedeem();
     show("#s-clear");
