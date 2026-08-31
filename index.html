@@ -268,6 +268,13 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
 /* テロップが出ている間は本文を少し上げる */
 .tv-screen.has-ticker .tv-inner{ padding-bottom:13%; }
 
+/* ヒントまでの残り時間（TV画面の右下） */
+.hint-countdown{ position:absolute; right:3.5%; bottom:2.5%; z-index:5; display:none;
+  font-family:var(--mono); font-size:clamp(8.5px,2.4vw,11px); letter-spacing:.08em;
+  color:rgba(199,217,58,.75); text-shadow:0 0 8px rgba(0,0,0,.9); }
+.hint-countdown.show{ display:block; }
+.tv-screen.has-ticker .hint-countdown{ bottom:auto; top:2.5%; }
+
 /* ---- 正解（ショップ提示）画面 ---- */
 .panel{ width:min(400px,100%); padding:26px 22px 24px; border-radius:14px;
   background:rgba(4,18,26,.72); border:1px solid rgba(233,232,0,.22);
@@ -404,6 +411,7 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
       <div class="tv-ticker" id="tvTicker" aria-live="polite">
         <div class="tv-ticker-inner" id="tickerInner"></div>
       </div>
+      <div class="hint-countdown" id="hintCount"></div>
     </div>
   </div>
   <button class="btn" id="ansBtn"><span class="plabel">ENTER</span><span class="jlabel">送信する</span></button>
@@ -720,44 +728,66 @@ $("#playBtn").addEventListener("click", ()=>{
 /* ---- 2回目だけ：時間経過でヒントをテロップ表示 ---- */
 const HINT_START_KEY = "takeshima_extra_start";
 let hintTimers = [];
+let hintTick = null;
 
 function hintElapsed(){
-  // 開始時刻を保存し、リロードしても経過時間が巻き戻らないようにする
+  // ?fasthint=1 を付けるとヒントまでの時間を10分の1にしてテストできる
+  const speed = q.get("fasthint")==="1" ? 10 : 1;
   let t;
   try{ t = parseInt(localStorage.getItem(HINT_START_KEY)||"0",10); }catch(e){ t=0; }
   if(!t){ t = Date.now(); try{ localStorage.setItem(HINT_START_KEY, String(t)); }catch(e){} }
-  return (Date.now() - t) / 1000;
+  return ((Date.now() - t) / 1000) * speed;
 }
 
 function renderTicker(texts){
-  if(!texts.length) return;
-  // 途切れなく流すため同じ内容を2回並べる
+  const inner=$("#tickerInner");
+  if(!texts.length){
+    $("#tvTicker").classList.remove("show");
+    document.querySelector(".tv-screen").classList.remove("has-ticker");
+    inner.dataset.key="";
+    return;
+  }
+  const key=texts.join("|");
+  if(inner.dataset.key===key) return;        // 同じ内容なら流れを途切れさせない
+  inner.dataset.key=key;
   const one = texts.map(t=>`<span>${t}</span>`).join("");
-  $("#tickerInner").innerHTML = one + one;
+  inner.innerHTML = one + one;               // 途切れなく流すため2回並べる
   $("#tvTicker").classList.add("show");
   document.querySelector(".tv-screen").classList.add("has-ticker");
 }
 
 function startHints(){
   hintTimers.forEach(clearTimeout); hintTimers = [];
+  if(hintTick) clearInterval(hintTick);
   if(!isExtra) return;                       // ← 2回目の画面だけ
 
-  const el = hintElapsed();
-  const show = ()=>{
+  const cd = $("#hintCount");
+
+  const update = ()=>{
     const e = hintElapsed();
+    // 出す条件を満たしたヒントをテロップに反映
     const list = [];
     if(e >= CONFIG.hint1AfterSec && CONFIG.hint1Text) list.push(CONFIG.hint1Text);
     if(e >= CONFIG.hint2AfterSec && CONFIG.hint2Text) list.push(CONFIG.hint2Text);
     renderTicker(list);
+
+    // 次のヒントまでの残り時間を表示
+    let next = null;
+    if(e < CONFIG.hint1AfterSec)      next = CONFIG.hint1AfterSec - e;
+    else if(e < CONFIG.hint2AfterSec) next = CONFIG.hint2AfterSec - e;
+    if(next !== null){
+      const s = Math.max(0, Math.ceil(next));
+      const m = Math.floor(s/60);
+      cd.textContent = `ヒントまで ${m>0? m+":"+String(s%60).padStart(2,"0") : s+"秒"}`;
+      cd.classList.add("show");
+    }else{
+      cd.classList.remove("show");
+      if(hintTick) clearInterval(hintTick);
+    }
   };
 
-  // すでに時間が過ぎていれば即表示、まだならその時刻に表示
-  if(el >= CONFIG.hint1AfterSec) show();
-  else hintTimers.push(setTimeout(()=>{ show(); track("hint1_shown"); },
-                                  (CONFIG.hint1AfterSec - el)*1000));
-  if(el < CONFIG.hint2AfterSec)
-    hintTimers.push(setTimeout(()=>{ show(); track("hint2_shown"); },
-                               (CONFIG.hint2AfterSec - el)*1000));
+  update();
+  hintTick = setInterval(update, 1000);      // 1秒ごとに更新
 }
 
 /* ---- ③ 回答フォームの準備（モード別） ---- */
