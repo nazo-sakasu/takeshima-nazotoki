@@ -68,12 +68,6 @@ body{
   90%{ opacity:.35; }
   100%{ transform:translateY(-112dvh) translateX(var(--drift,14px)); opacity:0; }
 }
-.jelly{ position:absolute; opacity:.14; animation:drift linear infinite; filter:drop-shadow(0 0 18px rgba(199,217,58,.25)); }
-@keyframes drift{
-  0%{ transform:translateY(0) translateX(0); }
-  50%{ transform:translateY(-26px) translateX(18px); }
-  100%{ transform:translateY(0) translateX(0); }
-}
 /* VHS 走査線＋ノイズ */
 .scan{
   position:fixed; inset:0; z-index:40; pointer-events:none; mix-blend-mode:overlay; opacity:.5;
@@ -129,8 +123,6 @@ body{
   white-space:nowrap; text-shadow:0 0 26px rgba(0,0,0,.6); }
 .vtitle .accent{ color:var(--orange); }
 
-h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
-  font-size:clamp(30px,8vw,58px); line-height:1.28; }
 .lead{ font-size:clamp(11px, 3.55vw, 16px); line-height:2.1; color:var(--dim);
   letter-spacing:.02em; white-space:nowrap; max-width:100%; }
 
@@ -219,11 +211,19 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
 .qframe .bl{ bottom:5px; left:5px; border-right:0; border-top:0; }
 .qframe .br{ bottom:5px; right:5px; border-left:0; border-top:0; }
 
-.qnums{ font-family:var(--serif); font-weight:700; color:var(--cream);
-  font-size:clamp(17px,5.5vw,28px); line-height:1.42; letter-spacing:.04em;
-  text-shadow:0 0 16px rgba(199,217,58,.25); }
+/* 数字は右から左へ流れる（1行になるぶん大きく表示できる） */
+.qmarquee{ width:100%; overflow:hidden;
+  -webkit-mask-image:linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%);
+  mask-image:linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%); }
+.qmarquee-inner{ display:flex; width:max-content; white-space:nowrap; will-change:transform;
+  font-family:var(--serif); font-weight:700; color:var(--cream);
+  font-size:clamp(30px, 9.5vw, 54px); line-height:1.4; letter-spacing:.06em;
+  text-shadow:0 0 18px rgba(199,217,58,.3);
+  animation:qScroll 30s linear infinite; }
+.qmarquee-inner span{ flex:0 0 auto; padding:0 1.4em; }
+@keyframes qScroll{ from{ transform:translateX(0) } to{ transform:translateX(-50%) } }
 .qlead{ font-family:var(--serif); font-weight:700; color:var(--cream);
-  font-size:clamp(14px,4.3vw,22px); line-height:1.4; letter-spacing:.05em; margin-top:4px; }
+  font-size:clamp(15px,4.6vw,24px); line-height:1.4; letter-spacing:.05em; margin-top:8px; }
 .qrec{ position:absolute; right:4%; bottom:3%; font-family:var(--mono);
   font-size:clamp(7.5px,2.1vw,9.5px); letter-spacing:.14em; color:var(--orange); opacity:.9; }
 
@@ -275,11 +275,6 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
   letter-spacing:.05em; color:var(--lime); padding:13px 14px 12px; margin-top:2px;
   border-top:1px dashed rgba(199,217,58,.35); border-bottom:1px dashed rgba(199,217,58,.35); }
 
-.prize-note{ font-size:12.5px; line-height:1.95; color:var(--lime); letter-spacing:.02em;
-  max-width:30ch; margin:0 auto; }
-.prize-note strong{ color:#fff; font-weight:800; }
-.prize-note br{ display:none; }
-@media (min-width:400px){ .prize-note br{ display:inline; } }
 
 /* TV下部のヒントテロップ */
 .tv-ticker{ position:absolute; left:0; right:0; bottom:0; z-index:4; display:none;
@@ -319,7 +314,6 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
 .present-note{ font-size:14.5px; line-height:1.9; }
 .present-note strong{ color:var(--orange); font-weight:900; }
 .ticket{ font-family:var(--mono); font-size:11.5px; letter-spacing:.2em; color:var(--dim); }
-.next-note{ font-size:12.5px; color:var(--dim); line-height:1.9; }
 
 /* 参加賞の引換 */
 .redeem{ width:100%; margin-top:6px; padding:14px 14px 12px; border-radius:10px;
@@ -435,7 +429,7 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
     <div class="qframe">
       <span class="c tl"></span><span class="c tr"></span>
       <span class="c bl"></span><span class="c br"></span>
-      <p class="qnums" id="qNums"></p>
+      <div class="qmarquee"><div class="qmarquee-inner" id="qNums"></div></div>
       <p class="qlead" id="qLead"></p>
       <span class="qrec">RE:REC ●</span>
     </div>
@@ -524,8 +518,6 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
     <div class="clear-badge">ALL MYSTERIES SOLVED</div>
     <h1 class="congrats">すべての謎は、解けた。</h1>
     <p class="present-note">最後まで付き合ってくれてありがとう。</p>
-    <p class="prize-note">アンケートに答えると、抽選で<br>
-      <strong>水族館のペア入館券</strong>や<strong>オリジナルグッズ詰め合わせ（1万円相当）</strong><br>が当たるかもしれないぞ。</p>
     <button class="btn" id="surveyBtn">
       <span class="plabel">SURVEY</span><span class="jlabel">アンケートに答える</span>
     </button>
@@ -614,10 +606,15 @@ function norm(s){
 }
 const answersFor = list => list.map(norm);
 
-// 進捗（localStorageが使えない環境でもフォールバックで動く）
+// 進捗（localStorageが使えない環境＝シークレットモード等でもフォールバックで動く）
+// ↓ 保存できない場合に備え、同じセッション中はメモリ上でも状態を保持する
+let clearedMem = false, redeemMem = null, ticketMem = null, finishedMem = false, hintStartMem = 0;
 const KEY = "takeshima_nazo_stage1";
-function saveCleared(){ try{ localStorage.setItem(KEY,"yes"); }catch(e){} }
-function isCleared(){ try{ return localStorage.getItem(KEY)==="yes"; }catch(e){ return false; } }
+function saveCleared(){ clearedMem = true; try{ localStorage.setItem(KEY,"yes"); }catch(e){} }
+function isCleared(){
+  try{ if(localStorage.getItem(KEY)==="yes") return true; }catch(e){}
+  return clearedMem;
+}
 function resetProgress(){
   try{
     localStorage.removeItem(KEY);
@@ -626,6 +623,7 @@ function resetProgress(){
     localStorage.removeItem("takeshima_finished");
     localStorage.removeItem("takeshima_extra_start");
   }catch(e){}
+  clearedMem=false; redeemMem=null; ticketMem=null; finishedMem=false; hintStartMem=0;
 }
 
 if(q.get("reset")==="1"){ resetProgress(); }
@@ -782,9 +780,16 @@ let hintTick = null;
 function hintElapsed(){
   // ?fasthint=1 を付けるとヒントまでの時間を10分の1にしてテストできる
   const speed = q.get("fasthint")==="1" ? 10 : 1;
-  let t;
-  try{ t = parseInt(localStorage.getItem(HINT_START_KEY)||"0",10); }catch(e){ t=0; }
-  if(!t){ t = Date.now(); try{ localStorage.setItem(HINT_START_KEY, String(t)); }catch(e){} }
+  let t = 0;
+  try{ t = parseInt(localStorage.getItem(HINT_START_KEY)||"0",10) || 0; }catch(e){ t=0; }
+  if(!t) t = hintStartMem;                       // ← 保存できない環境ではこちらを使う
+  if(!t){
+    t = Date.now();
+    hintStartMem = t;
+    try{ localStorage.setItem(HINT_START_KEY, String(t)); }catch(e){}
+  }else{
+    hintStartMem = t;
+  }
   return ((Date.now() - t) / 1000) * speed;
 }
 
@@ -801,6 +806,10 @@ function renderTicker(texts){
   inner.dataset.key=key;
   const one = texts.map(t=>`<span>${t}</span>`).join("");
   inner.innerHTML = one + one;               // 途切れなく流すため2回並べる
+  // 内容が変わった時はアニメーションを最初から流し直す（途中から始まるのを防ぐ）
+  inner.style.animation="none";
+  void inner.offsetWidth;
+  inner.style.animation="";
   $("#tvTicker").classList.add("show");
   document.querySelector(".tv-screen").classList.add("has-ticker");
 }
@@ -852,7 +861,9 @@ function setupAnswer(){
 
   // 問題文パネルは2回目だけ表示
   if(stage2){
-    $("#qNums").textContent = CONFIG.questionNums;
+    // 途切れなく流すため同じ内容を2回並べる
+    const one = `<span>${CONFIG.questionNums}</span>`;
+    $("#qNums").innerHTML = one + one;
     $("#qLead").textContent = CONFIG.questionLead;
     $("#qPanel").classList.add("show");
   }else{
@@ -914,16 +925,23 @@ function getTicket(){
     const saved = localStorage.getItem(TICKET_KEY);
     if(saved) return saved;
   }catch(e){}
+  if(ticketMem) return ticketMem;
   const d=new Date();
   const ymd=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
   const t=`${ymd}-${Math.floor(1000+Math.random()*9000)}`;
+  ticketMem = t;
   try{ localStorage.setItem(TICKET_KEY,t); }catch(e){}
   return t;
 }
 function getRedeem(){
-  try{ return JSON.parse(localStorage.getItem(REDEEM_KEY)||"null"); }catch(e){ return null; }
+  try{
+    const v = JSON.parse(localStorage.getItem(REDEEM_KEY)||"null");
+    if(v) return v;
+  }catch(e){}
+  return redeemMem;                       // ← 保存できない環境ではこちら
 }
 function setRedeem(rec){
+  redeemMem = rec;
   try{ localStorage.setItem(REDEEM_KEY, JSON.stringify(rec)); }catch(e){}
 }
 function fmt(ts){
@@ -1004,8 +1022,11 @@ function goSurvey(){
 
 /* ---- ⑤ 第2段階クリア → メッセージ → 真エンディング → アンケート ---- */
 const FINISH_KEY = "takeshima_finished";
-function isFinished(){ try{ return localStorage.getItem(FINISH_KEY)==="yes"; }catch(e){ return false; } }
-function setFinished(){ try{ localStorage.setItem(FINISH_KEY,"yes"); }catch(e){} }
+function isFinished(){
+  try{ if(localStorage.getItem(FINISH_KEY)==="yes") return true; }catch(e){}
+  return finishedMem;
+}
+function setFinished(){ finishedMem = true; try{ localStorage.setItem(FINISH_KEY,"yes"); }catch(e){} }
 
 function toTrueEnding(){
   setTimeout(()=>show("#s-truth"), 500);
@@ -1039,17 +1060,16 @@ window.addEventListener("pageshow", ()=>{
    ※ ?extra=1 が付いていれば常にエクストラへ                          */
 /* ---- 起動時の画面判定 ----
    ・?extra=1（カードQR） → 常に2回目。エンディング視聴済みなら完了画面
-   ・それ以外（1回目QR）  → 参加賞が未引換ならクリア画面、それ以外は最初から   */
+   ・それ以外（1回目QR）  → クリア済みなら必ずクリア画面（引換状態を表示）   */
 (function boot(){
   if(isExtra){
     // 2回目：エンディングを見終わっていれば完了画面のみ
     if(isFinished()){ show("#s-done"); }
     return;
   }
-  // 1回目：参加賞がまだなら、店員に見せるクリア画面を再表示できるようにする
-  const rec=getRedeem();
-  const redeemed = !!(rec && rec.redeemed);
-  if(isCleared() && !redeemed){
+  // 1回目：一度クリアしていれば、引換の有無にかかわらずクリア画面を表示する
+  //        （引換済みなら「引換済」スタンプが出るので二重受取を防げる）
+  if(isCleared()){
     $("#clearTicket").textContent = "TICKET  " + getTicket();
     renderRedeem();
     show("#s-clear");
