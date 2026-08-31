@@ -251,6 +251,23 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
 .prize-note br{ display:none; }
 @media (min-width:400px){ .prize-note br{ display:inline; } }
 
+/* TV下部のヒントテロップ */
+.tv-ticker{ position:absolute; left:0; right:0; bottom:0; z-index:4; display:none;
+  align-items:center; overflow:hidden; padding:2.5% 0;
+  background:linear-gradient(to top, rgba(0,0,0,.82), rgba(0,0,0,.45));
+  border-top:1px solid rgba(199,217,58,.3); }
+.tv-ticker.show{ display:flex; animation:tickerIn .6s ease both; }
+@keyframes tickerIn{ from{ opacity:0; transform:translateY(100%) } to{ opacity:1; transform:none } }
+.tv-ticker-inner{ display:inline-flex; white-space:nowrap; will-change:transform;
+  font-family:var(--serif); font-weight:700; color:var(--lime);
+  font-size:clamp(11px, 3.2vw, 15px); letter-spacing:.08em;
+  text-shadow:0 0 10px rgba(199,217,58,.55);
+  animation:tickerScroll 17s linear infinite; }
+@keyframes tickerScroll{ from{ transform:translateX(0) } to{ transform:translateX(-50%) } }
+.tv-ticker-inner span{ padding:0 2.2em; }
+/* テロップが出ている間は本文を少し上げる */
+.tv-screen.has-ticker .tv-inner{ padding-bottom:13%; }
+
 /* ---- 正解（ショップ提示）画面 ---- */
 .panel{ width:min(400px,100%); padding:26px 22px 24px; border-radius:14px;
   background:rgba(4,18,26,.72); border:1px solid rgba(233,232,0,.22);
@@ -384,6 +401,9 @@ h1.title{ font-family:var(--serif); font-weight:800; letter-spacing:.06em;
                autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="こたえ">
         <div class="msg" id="ansMsg" role="status" aria-live="polite"></div>
       </div>
+      <div class="tv-ticker" id="tvTicker" aria-live="polite">
+        <div class="tv-ticker-inner" id="tickerInner"></div>
+      </div>
     </div>
   </div>
   <button class="btn" id="ansBtn"><span class="plabel">ENTER</span><span class="jlabel">送信する</span></button>
@@ -485,6 +505,14 @@ const CONFIG = {
   surveyUrl     : "https://docs.google.com/forms/d/e/1FAIpQLSefg3hXoKpUU_NXskBISIM-Pdy24Qi7zzpMs_hBZTLrdBxmvw/viewform?usp=header",
   surveyDelayMs : 1200,   // エンディング動画終了後、フォームへ飛ぶまでの待ち時間
 
+  // ▼ 2回目（本当の最後の回答）だけに出るヒント
+  //   ・TV下部にテロップで流れます。時間はページを開いてからの秒数
+  //   ・リロードしても時間はリセットされません
+  hint1AfterSec : 90,                                        // 第1弾が出るまで（秒）
+  hint2AfterSec : 210,                                       // 第2弾が出るまで（秒）
+  hint1Text     : "ヒント①　1＝み",
+  hint2Text     : "ヒント②　26＝竹・27＝島・28＝水・29＝族・30＝館",
+
   // ▼ 店員用パスワード（参加賞の引換処理）
   staffPassword : "1956",
 
@@ -540,6 +568,7 @@ function resetProgress(){
     localStorage.removeItem("takeshima_ticket");
     localStorage.removeItem("takeshima_redeem");
     localStorage.removeItem("takeshima_finished");
+    localStorage.removeItem("takeshima_extra_start");
   }catch(e){}
 }
 
@@ -688,6 +717,49 @@ $("#playBtn").addEventListener("click", ()=>{
   playVideo(CONFIG.introVideoUrl, ()=> setupAnswer());
 });
 
+/* ---- 2回目だけ：時間経過でヒントをテロップ表示 ---- */
+const HINT_START_KEY = "takeshima_extra_start";
+let hintTimers = [];
+
+function hintElapsed(){
+  // 開始時刻を保存し、リロードしても経過時間が巻き戻らないようにする
+  let t;
+  try{ t = parseInt(localStorage.getItem(HINT_START_KEY)||"0",10); }catch(e){ t=0; }
+  if(!t){ t = Date.now(); try{ localStorage.setItem(HINT_START_KEY, String(t)); }catch(e){} }
+  return (Date.now() - t) / 1000;
+}
+
+function renderTicker(texts){
+  if(!texts.length) return;
+  // 途切れなく流すため同じ内容を2回並べる
+  const one = texts.map(t=>`<span>${t}</span>`).join("");
+  $("#tickerInner").innerHTML = one + one;
+  $("#tvTicker").classList.add("show");
+  document.querySelector(".tv-screen").classList.add("has-ticker");
+}
+
+function startHints(){
+  hintTimers.forEach(clearTimeout); hintTimers = [];
+  if(!isExtra) return;                       // ← 2回目の画面だけ
+
+  const el = hintElapsed();
+  const show = ()=>{
+    const e = hintElapsed();
+    const list = [];
+    if(e >= CONFIG.hint1AfterSec && CONFIG.hint1Text) list.push(CONFIG.hint1Text);
+    if(e >= CONFIG.hint2AfterSec && CONFIG.hint2Text) list.push(CONFIG.hint2Text);
+    renderTicker(list);
+  };
+
+  // すでに時間が過ぎていれば即表示、まだならその時刻に表示
+  if(el >= CONFIG.hint1AfterSec) show();
+  else hintTimers.push(setTimeout(()=>{ show(); track("hint1_shown"); },
+                                  (CONFIG.hint1AfterSec - el)*1000));
+  if(el < CONFIG.hint2AfterSec)
+    hintTimers.push(setTimeout(()=>{ show(); track("hint2_shown"); },
+                               (CONFIG.hint2AfterSec - el)*1000));
+}
+
 /* ---- ③ 回答フォームの準備（モード別） ---- */
 function setupAnswer(){
   const stage2 = isExtra;
@@ -700,6 +772,7 @@ function setupAnswer(){
   $("#ansInput").value="";
   show("#s-answer");
   fitTvText();
+  startHints();
   setTimeout(()=>$("#ansInput").focus(),300);
 }
 
