@@ -799,20 +799,26 @@ const HINT_START_KEY = "takeshima_extra_start";
 let hintTimers = [];
 let hintTick = null;
 
+// ヒントの計測起点
+// ・リロードや画面の切り替えでは巻き戻らない（保存した時刻を使い続ける）
+// ・ただし古すぎる記録（前回の来館・テスト時など）は使わず、新しく計測し直す
+const HINT_MAX_AGE_MS = 3 * 60 * 60 * 1000;      // 3時間を超えた記録は破棄
+function resetHintClock(){
+  hintStartMem = Date.now();
+  try{ localStorage.setItem(HINT_START_KEY, String(hintStartMem)); }catch(e){}
+}
 function hintElapsed(){
   // ?fasthint=1 を付けるとヒントまでの時間を10分の1にしてテストできる
   const speed = q.get("fasthint")==="1" ? 10 : 1;
-  let t = 0;
-  try{ t = parseInt(localStorage.getItem(HINT_START_KEY)||"0",10) || 0; }catch(e){ t=0; }
-  if(!t) t = hintStartMem;                       // ← 保存できない環境ではこちらを使う
-  if(!t){
-    t = Date.now();
-    hintStartMem = t;
-    try{ localStorage.setItem(HINT_START_KEY, String(t)); }catch(e){}
-  }else{
-    hintStartMem = t;
+  if(!hintStartMem){
+    let t = 0;
+    try{ t = parseInt(localStorage.getItem(HINT_START_KEY)||"0",10) || 0; }catch(e){ t=0; }
+    // 保存済みの時刻が「妥当な範囲内」なら引き継ぐ
+    const age = t ? Date.now() - t : Infinity;
+    if(t && age >= 0 && age < HINT_MAX_AGE_MS) hintStartMem = t;
+    else resetHintClock();
   }
-  return ((Date.now() - t) / 1000) * speed;
+  return ((Date.now() - hintStartMem) / 1000) * speed;
 }
 
 function renderTicker(texts){
@@ -841,6 +847,10 @@ function startHints(){
   if(hintTick) clearInterval(hintTick);
   if(!isExtra) return;                       // ← 2回目の画面だけ
 
+  // 前回の表示状態が残らないよう初期化する（計測起点は引き継ぐ）
+  $("#tickerInner").dataset.key="";
+  $("#tvTicker").classList.remove("show");
+  document.querySelector(".tv-screen").classList.remove("has-ticker");
   const cd = $("#hintCount");
 
   const update = ()=>{
