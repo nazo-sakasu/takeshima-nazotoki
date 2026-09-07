@@ -295,14 +295,15 @@ body{
 @keyframes tickerIn{ from{ opacity:0; transform:translateY(100%) } to{ opacity:1; transform:none } }
 .tv-ticker-inner{ display:flex; flex:0 0 auto; width:max-content; white-space:nowrap;
   will-change:transform;
-  font-family:var(--serif); font-weight:700; color:var(--lime);
+  font-family:var(--sans); font-weight:700; color:var(--lime);
   font-size:clamp(11px, 3.2vw, 15px); letter-spacing:.08em;
   text-shadow:0 0 10px rgba(199,217,58,.55);
-  animation:tickerScroll 26s linear infinite; }
+  animation:tickerScroll 24s linear infinite; }
 @keyframes tickerScroll{ from{ transform:translateX(0) } to{ transform:translateX(-50%) } }
 .tv-ticker-inner span{ flex:0 0 auto; padding:0 2.2em;
-  font-size:1em; line-height:1; font-feature-settings:"palt" 0;
-  font-variant-numeric:normal; letter-spacing:.08em; }
+  font-size:inherit; font-family:inherit; font-weight:inherit; line-height:1;
+  font-feature-settings:"palt" 0; font-variant-numeric:tabular-nums;
+  letter-spacing:.08em; }
 /* テロップが出ている間は本文を少し上げる */
 .tv-screen.has-ticker .tv-inner{ padding-bottom:13%; }
 
@@ -564,7 +565,7 @@ const CONFIG = {
 
   // ▼ 1回目（最後の答えを入力せよ）の画面の上に出すヒント
   //   空にすると非表示になります
-  keyHintText   : "カギ番号：HEN7B",
+  keyHintText   : "カギ番号：HEN8",
 
   // ▼ 2回目（本当の最後の回答）の画面に出す問題文
   //   数字を書き換えれば表示も変わります
@@ -573,11 +574,14 @@ const CONFIG = {
 
   // ▼ 2回目（本当の最後の回答）だけに出るヒント
   //   ・TV下部にテロップで流れます。時間はページを開いてからの秒数
+  //   ・0 にすると最初から表示されます
   //   ・リロードしても時間はリセットされません
-  hint1AfterSec : 90,                                        // 第1弾が出るまで（秒）
-  hint2AfterSec : 210,                                       // 第2弾が出るまで（秒）
-  hint1Text     : "ヒント①　１＝み",
-  hint2Text     : "ヒント②　２６＝竹・２７＝島・２８＝水・２９＝族・３０＝館",
+  hint1AfterSec : 0,                                         // ①＝最初から
+  hint2AfterSec : 90,                                        // ②が出るまで（秒）
+  hint3AfterSec : 150,                                       // ③が出るまで（秒）
+  hint1Text     : "ヒント①　1＝み",
+  hint2Text     : "ヒント②　26＝竹・27＝島・28＝水・29＝族・30＝館",
+  hint3Text     : "ヒント③　最後のカードをよく見て！",
 
   // ▼ 店員用パスワード（参加賞の引換処理）
   staffPassword : "1956",
@@ -845,16 +849,18 @@ function startHints(){
     const list = [];
     if(e >= CONFIG.hint1AfterSec && CONFIG.hint1Text) list.push(CONFIG.hint1Text);
     if(e >= CONFIG.hint2AfterSec && CONFIG.hint2Text) list.push(CONFIG.hint2Text);
+    if(e >= CONFIG.hint3AfterSec && CONFIG.hint3Text) list.push(CONFIG.hint3Text);
     renderTicker(list);
 
     // 次のヒントまでの残り時間を表示
     let next = null;
     if(e < CONFIG.hint1AfterSec)      next = CONFIG.hint1AfterSec - e;
     else if(e < CONFIG.hint2AfterSec) next = CONFIG.hint2AfterSec - e;
+    else if(e < CONFIG.hint3AfterSec) next = CONFIG.hint3AfterSec - e;
     if(next !== null){
       const s = Math.max(0, Math.ceil(next));
       const m = Math.floor(s/60);
-      cd.textContent = `ヒントまで ${m>0? m+":"+String(s%60).padStart(2,"0") : s+"秒"}`;
+      cd.textContent = `次のヒントまで ${m>0? m+":"+String(s%60).padStart(2,"0") : s+"秒"}`;
       cd.classList.add("show");
     }else{
       cd.classList.remove("show");
