@@ -298,7 +298,7 @@ body{
   font-family:var(--sans); font-weight:700; color:var(--lime);
   font-size:clamp(11px, 3.2vw, 15px); letter-spacing:.08em;
   text-shadow:0 0 10px rgba(199,217,58,.55);
-  animation:tickerScroll 24s linear infinite; }
+  animation:tickerScroll 42s linear infinite; }
 @keyframes tickerScroll{ from{ transform:translateX(0) } to{ transform:translateX(-50%) } }
 .tv-ticker-inner span{ flex:0 0 auto; padding:0 2.2em;
   font-size:inherit; font-family:inherit; font-weight:inherit; line-height:1;
@@ -551,8 +551,9 @@ body{
 const CONFIG = {
   // ▼ 動画URL（このHTMLと同じ場所に置いて相対パスでもOK。mp4推奨）
   introVideoUrl : "intro.mp4",   // ビデオ再生の動画（第1段階・第2段階で共通）
-  endingVideoUrl: "intro.mp4",   // ★仮：本番は真エンディング動画に差し替え（例: "ending.mp4"）
-  introPoster   : "poster.jpg",  // 動画開始前のポスター画像（黒画面回避）
+  endingVideoUrl: "ending.mp4",  // 真エンディング動画
+  introPoster   : "poster.jpg",        // 導入動画のポスター画像（黒画面回避）
+  endingPoster  : "ending-poster.jpg",  // エンディング動画のポスター画像
 
   // ▼ 正解（配列で複数の表記ゆれを登録可。全角/半角・大文字小文字・カタカナ/ひらがなは自動吸収）
   stage1Answers : ["message", "メッセージ", "メツセージ"],        // ← 第1段階＝ message
@@ -576,15 +577,17 @@ const CONFIG = {
   questionLead  : "この文章に答えよ。",
 
   // ▼ 2回目（本当の最後の回答）だけに出るヒント
-  //   ・TV下部にテロップで流れます。時間はページを開いてからの秒数
+  //   ・TV下部にテロップで流れます。at はページを開いてからの秒数
   //   ・0 にすると最初から表示されます
-  //   ・リロードしても時間はリセットされません
-  hint1AfterSec : 0,                                         // ①＝最初から
-  hint2AfterSec : 90,                                        // ②が出るまで（秒）
-  hint3AfterSec : 150,                                       // ③が出るまで（秒）
-  hint1Text     : "ヒント①　1＝み",
-  hint2Text     : "ヒント②　26＝竹・27＝島・28＝水・29＝族・30＝館",
-  hint3Text     : "ヒント③　最後のカードをよく見て！",
+  //   ・行を足したり消したりすれば、そのまま増減できます
+  hints : [
+    { at:   0, text:"ヒント①　1＝み" },
+    { at:  90, text:"ヒント②　26＝竹・27＝島・28＝水・29＝族・30＝館" },
+    { at: 150, text:"ヒント③　最後のカードをよく見て！" },
+    { at: 180, text:"ヒント④　数字は最後に渡したカードの文字数だよ！" },
+    { at: 200, text:"ヒント⑤　46＝は・47＝今・50＝年・89＝で" },
+    { at: 240, text:"ヒントLAST　竹島水族館は今年で何周年？" },
+  ],
 
   // ▼ 店員用パスワード（参加賞の引換処理）
   staffPassword : "1956",
@@ -737,8 +740,10 @@ const loader  = $("#loader");
 const tapPlay = $("#tapPlay");
 if(DEV){ skipBtn.style.display="block"; $("#resetLink").classList.add("show"); }
 
-function playVideo(url, onEnd){
-  if(CONFIG.introPoster) player.setAttribute("poster",CONFIG.introPoster);
+function playVideo(url, onEnd, poster){
+  // 動画に応じたポスター画像（読み込み中の黒画面を防ぐ）
+  const posterUrl = poster || CONFIG.introPoster;
+  if(posterUrl) player.setAttribute("poster", posterUrl); else player.removeAttribute("poster");
   player.src=url;
   videoWrap.classList.add("show");
   loader.classList.add("show");
@@ -805,7 +810,7 @@ let hintTick = null;
 // ヒントの計測起点
 // ・リロードや画面の切り替えでは巻き戻らない（保存した時刻を使い続ける）
 // ・ただし古すぎる記録（前回の来館・テスト時など）は使わず、新しく計測し直す
-const HINT_MAX_AGE_MS = 3 * 60 * 60 * 1000;      // 3時間を超えた記録は破棄
+const HINT_MAX_AGE_MS = 3 * 60 * 60 * 1000;      // 3時間を超えた記録は破棄（謎解きは60〜90分想定）
 function resetHintClock(){
   hintStartMem = Date.now();
   try{ localStorage.setItem(HINT_START_KEY, String(hintStartMem)); }catch(e){}
@@ -858,20 +863,14 @@ function startHints(){
 
   const update = ()=>{
     const e = hintElapsed();
-    // 出す条件を満たしたヒントをテロップに反映
-    const list = [];
-    if(e >= CONFIG.hint1AfterSec && CONFIG.hint1Text) list.push(CONFIG.hint1Text);
-    if(e >= CONFIG.hint2AfterSec && CONFIG.hint2Text) list.push(CONFIG.hint2Text);
-    if(e >= CONFIG.hint3AfterSec && CONFIG.hint3Text) list.push(CONFIG.hint3Text);
+    // 時間が来たヒントをすべてテロップに流す
+    const list = CONFIG.hints.filter(x => e >= x.at && x.text).map(x => x.text);
     renderTicker(list);
 
     // 次のヒントまでの残り時間を表示
-    let next = null;
-    if(e < CONFIG.hint1AfterSec)      next = CONFIG.hint1AfterSec - e;
-    else if(e < CONFIG.hint2AfterSec) next = CONFIG.hint2AfterSec - e;
-    else if(e < CONFIG.hint3AfterSec) next = CONFIG.hint3AfterSec - e;
-    if(next !== null){
-      const s = Math.max(0, Math.ceil(next));
+    const next = CONFIG.hints.find(x => e < x.at);
+    if(next){
+      const s = Math.max(0, Math.ceil(next.at - e));
       const m = Math.floor(s/60);
       cd.textContent = `次のヒントまで ${m>0? m+":"+String(s%60).padStart(2,"0") : s+"秒"}`;
       cd.classList.add("show");
@@ -1083,7 +1082,7 @@ $("#endBtn").addEventListener("click", ()=>{
   playVideo(CONFIG.endingVideoUrl, ()=>{
     track("go_survey");
     goSurvey();
-  });
+  }, CONFIG.endingPoster);
 });
 // アンケートへ戻ってきた場合の再遷移用
 $("#surveyBtn").addEventListener("click", ()=>{
