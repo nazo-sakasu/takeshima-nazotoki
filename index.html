@@ -297,8 +297,7 @@ body{
   will-change:transform;
   font-family:var(--sans); font-weight:700; color:var(--lime);
   font-size:clamp(11px, 3.2vw, 15px); letter-spacing:.08em;
-  text-shadow:0 0 10px rgba(199,217,58,.55);
-  animation:tickerScroll 42s linear infinite; }
+  text-shadow:0 0 10px rgba(199,217,58,.55); }
 @keyframes tickerScroll{ from{ transform:translateX(0) } to{ transform:translateX(-50%) } }
 .tv-ticker-inner span{ flex:0 0 auto; padding:0 2.2em;
   font-size:inherit; font-family:inherit; font-weight:inherit; line-height:1;
@@ -580,13 +579,17 @@ const CONFIG = {
   //   ・TV下部にテロップで流れます。at はページを開いてからの秒数
   //   ・0 にすると最初から表示されます
   //   ・行を足したり消したりすれば、そのまま増減できます
+  // ▼ ヒントテロップの流れる速さ（1秒あたりのpx）
+  //   ヒントが増えても速さは変わりません
+  tickerSpeed : 43,
+
   hints : [
     { at:   0, text:"ヒント①　1＝み" },
     { at:  90, text:"ヒント②　26＝竹・27＝島・28＝水・29＝族・30＝館" },
-    { at: 150, text:"ヒント③　最後のカードをよく見て！" },
-    { at: 180, text:"ヒント④　数字は最後に渡したカードの文字数だよ！" },
-    { at: 200, text:"ヒント⑤　46＝は・47＝今・50＝年・89＝で" },
-    { at: 240, text:"ヒントLAST　竹島水族館は今年で何周年？" },
+    { at: 180, text:"ヒント③　最後のカードをよく見て！" },
+    { at: 240, text:"ヒント④　数字は最後に渡したカードの文字数だよ！" },
+    { at: 300, text:"ヒント⑤　46＝は・47＝今・50＝年・89＝で" },
+    { at: 360, text:"ヒントLAST　竹島水族館は今年で何周年？" },
   ],
 
   // ▼ 店員用パスワード（参加賞の引換処理）
@@ -840,14 +843,27 @@ function renderTicker(texts){
   const key=texts.join("|");
   if(inner.dataset.key===key) return;        // 同じ内容なら流れを途切れさせない
   inner.dataset.key=key;
-  const one = texts.map(t=>`<span>${t}</span>`).join("");
-  inner.innerHTML = one + one;               // 途切れなく流すため2回並べる
-  // 内容が変わった時はアニメーションを最初から流し直す（途中から始まるのを防ぐ）
-  inner.style.animation="none";
-  void inner.offsetWidth;
-  inner.style.animation="";
+
   $("#tvTicker").classList.add("show");
   document.querySelector(".tv-screen").classList.add("has-ticker");
+
+  if(texts.length===1){
+    // ヒントが1つだけの時は動かさず、中央に静止させる
+    inner.innerHTML = `<span>${texts[0]}</span>`;
+    inner.style.animation="none";
+    inner.style.margin="0 auto";
+    return;
+  }
+
+  inner.style.margin="";
+  const one = texts.map(t=>`<span>${t}</span>`).join("");
+  inner.innerHTML = one + one;               // 途切れなく流すため2回並べる
+  // 内容が増えても速さが変わらないよう、幅に比例した時間で1周させる
+  inner.style.animation="none";
+  void inner.offsetWidth;
+  const dist = inner.scrollWidth / 2;        // 1周で動く距離
+  const sec  = Math.max(6, dist / CONFIG.tickerSpeed);
+  inner.style.animation = `tickerScroll ${sec.toFixed(1)}s linear infinite`;
 }
 
 function startHints(){
