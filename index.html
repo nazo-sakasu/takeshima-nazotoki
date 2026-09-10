@@ -429,7 +429,8 @@ body{
 
 <!-- ② 動画 -->
 <div class="video-wrap" id="videoWrap">
-  <video id="player" playsinline preload="auto"></video>
+  <video id="player" playsinline webkit-playsinline x5-playsinline
+         disablepictureinpicture preload="auto"></video>
   <div class="loader" id="loader"><span class="spin" aria-hidden="true"></span>読み込み中…</div>
   <button class="tapplay" id="tapPlay">▶ タップして再生</button>
   <div class="skip" id="skipBtn">▶▶ SKIP</div>
@@ -564,7 +565,7 @@ const CONFIG = {
 
   // ▼ 真エンディング後に飛ぶGoogleフォーム
   surveyUrl     : "https://docs.google.com/forms/d/e/1FAIpQLSefg3hXoKpUU_NXskBISIM-Pdy24Qi7zzpMs_hBZTLrdBxmvw/viewform?usp=header",
-  surveyDelayMs : 1200,   // エンディング動画終了後、フォームへ飛ぶまでの待ち時間
+  surveyDelayMs : 600,    // エンディング動画終了後、フォームへ飛ぶまでの待ち時間（ミリ秒）
 
   // ▼ 1回目（最後の答えを入力せよ）の画面の上に出すヒント
   //   空にすると非表示になります
@@ -754,9 +755,11 @@ function playVideo(url, onEnd, poster){
 
   let done=false;                       // ← 多重発火（二重遷移）防止
   let watchdog=null;
+  let onTime=null;
   const finish=()=>{
     if(done) return; done=true;
     player.onended=null; player.onerror=null;
+    if(onTime) player.removeEventListener("timeupdate", onTime);
     clearTimeout(watchdog);
     loader.classList.remove("show");
     tapPlay.classList.remove("show");
@@ -773,6 +776,16 @@ function playVideo(url, onEnd, poster){
     if(!done && (player.ended || player.currentTime >= (player.duration||0) - 0.5)) finish();
   };
   player.addEventListener("webkitendfullscreen", onExitFS, { once:true });
+
+  // 端末によっては ended が発火しないことがあるため、再生位置でも終了を判定する
+  onTime = ()=>{
+    const d = player.duration || 0;
+    if(!done && d > 0 && player.currentTime >= d - 0.25){
+      player.removeEventListener("timeupdate", onTime);
+      track("video_end"); finish();
+    }
+  };
+  player.addEventListener("timeupdate", onTime);
 
   // 【安全弁】動画が読み込めない場合は止まらず次へ進める
   player.onerror = ()=>{ track("video_error"); finish(); };
@@ -1065,19 +1078,40 @@ $("#staffPass").addEventListener("keydown", e=>{ if(e.key==="Enter") doRedeem();
 
 /* ---- アンケートへの遷移（確実に飛ばすための処理） ---- */
 function goSurvey(){
-  // iPhoneで動画が全画面のままだと遷移が止まることがあるため、先に解除する
-  try{
-    if(document.exitFullscreen) document.exitFullscreen();
-    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
-    else if(player.webkitExitFullscreen) player.webkitExitFullscreen();
-  }catch(e){}
-
   const url = CONFIG.surveyUrl;
-  // 万一そのまま飛ばなかった時のために、完了画面（アンケートボタン付き）を用意しておく
-  setTimeout(()=>{ show("#s-done"); }, CONFIG.surveyDelayMs + 2500);
-  setTimeout(()=>{
+  let jumped = false;
+
+  const jump = ()=>{
+    if(jumped) return; jumped = true;
     try{ location.replace(url); }catch(e){ location.href = url; }
-  }, CONFIG.surveyDelayMs);
+    // それでも移動できていない場合に備える（全画面の解除待ちなど）
+    setTimeout(()=>{
+      if(!document.hidden) { try{ location.href = url; }catch(e){} }
+    }, 700);
+  };
+
+  // 全画面を解除してから移動する（iPhoneは全画面のままだと移動できない）
+  let exited = false;
+  const doExit = ()=>{
+    if(exited) return; exited = true;
+    try{
+      if(document.fullscreenElement && document.exitFullscreen) document.exitFullscreen();
+      else if(document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
+      else if(player.webkitDisplayingFullscreen && player.webkitExitFullscreen) player.webkitExitFullscreen();
+    }catch(e){}
+  };
+  doExit();
+
+  // 全画面が閉じたら即移動、閉じなくても待ち時間で移動
+  player.addEventListener("webkitendfullscreen", ()=>setTimeout(jump,120), { once:true });
+  document.addEventListener("fullscreenchange", ()=>{
+    if(!document.fullscreenElement) setTimeout(jump,120);
+  }, { once:true });
+
+  setTimeout(jump, CONFIG.surveyDelayMs);
+
+  // 何らかの理由で移動できなかった時のみ、完了画面（アンケートボタン付き）を出す
+  setTimeout(()=>{ if(!document.hidden) show("#s-done"); }, CONFIG.surveyDelayMs + 3000);
 }
 
 /* ---- ⑤ 第2段階クリア → メッセージ → 真エンディング → アンケート ---- */
