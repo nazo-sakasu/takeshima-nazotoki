@@ -162,6 +162,9 @@ footer{ text-align:center; margin-top:30px; font-size:11px; color:rgba(245,237,2
    ・answers は複数登録可（ひらがな／カタカナ／全角半角は自動で吸収）
    ===================================================================== */
 
+// ▼ GA4測定ID（例:"G-XXXXXXXXXX"）。空にすれば計測なし
+const GA_ID = "G-MVNJE2YFSL";
+
 // ▼ LINEのURL（公式アカウントの友だち追加URLなど）。空にすると案内は非表示
 const LINE_URL  = "https://lin.ee/totsOhQ";
 const LINE_TEXT = "答えが分からないときは、LINEでヒントを確認しよう！";
@@ -193,6 +196,23 @@ const LINE_NUDGE_AFTER = 2;   // 何回まちがえたらLINEヒントを案内�
 
 const $ = s=>document.querySelector(s);
 const KEY = "takeshima_check";
+
+/* ---- GA4（GA_ID が空なら何もしない） ---- */
+(function ga(){
+  if(!GA_ID) return;
+  const s=document.createElement("script"); s.async=true;
+  s.src="https://www.googletagmanager.com/gtag/js?id="+GA_ID;
+  document.head.appendChild(s);
+  window.dataLayer=window.dataLayer||[];
+  window.gtag=function(){ dataLayer.push(arguments); };
+  gtag("js", new Date());
+  gtag("config", GA_ID, {
+    page_title:"なぞとき｜答え合わせ", page_path:"/nazotoki/check"
+  });
+})();
+function track(name, params){
+  try{ if(window.gtag) gtag("event", name, params||{}); }catch(e){}
+}
 
 // 表記ゆれ吸収：空白除去／全角英数→半角／半角カナ→全角／ひらがな→カタカナ／大文字化／かっこ書きを無視
 const HK={"ｶﾞ":"ガ","ｷﾞ":"ギ","ｸﾞ":"グ","ｹﾞ":"ゲ","ｺﾞ":"ゴ","ｻﾞ":"ザ","ｼﾞ":"ジ","ｽﾞ":"ズ","ｾﾞ":"ゼ","ｿﾞ":"ゾ",
@@ -281,9 +301,11 @@ function check(i){
   if(!val) return;
   if(q.answers.map(norm).includes(val)){
     markOk(i,"ok");
+    track("check_correct", { question: q.no });
     msg.className="msg ok"; msg.textContent="正解！";
   }else{
     wrong[i]=(wrong[i]||0)+1;
+    track("check_wrong", { question: q.no, count: wrong[i] });
     msg.className="msg err";
     msg.textContent = (wrong[i]>=LINE_NUDGE_AFTER)
       ? "ちがうみたい。LINEのヒントも見てみよう。"
@@ -317,6 +339,7 @@ function renderProgress(){
   $("#count").textContent = done+" / "+QUESTIONS.length;
   $("#finale").classList.toggle("show", done===QUESTIONS.length);
   if(done===QUESTIONS.length){
+    if(!window._allDone){ window._allDone=true; track("check_all_clear"); }
     setTimeout(()=>$("#finale").scrollIntoView({behavior:"smooth",block:"center"}),350);
   }
 }
@@ -327,6 +350,7 @@ renderProgress();
   $("#lineText").textContent = LINE_TEXT;
   if(LINE_URL){
     $("#lineBtn").href = LINE_URL;
+    $("#lineBtn").addEventListener("click", ()=>track("check_line_click"));
     $("#lineBox").classList.add("show");
   }else{
     // URL未設定のときは文言だけ表示（ボタンは出さない）

@@ -598,7 +598,7 @@ const CONFIG = {
 
   // ▼ GA4計測ID（例:"G-XXXXXXXXXX"）。空にすれば計測なし
   //   計測イベント: play_start / video_end / answer_wrong / stage1_clear / prize_redeemed / stage2_clear / go_survey
-  gaId          : "",
+  gaId          : "G-MVNJE2YFSL",
 
   // ▼ 運用モードの見え方（通常は触らなくてOK）
   //  ?extra=1 …… エクストラ回答画面へ直行（ショップ用の別QRに付ける想定）
@@ -620,10 +620,18 @@ const DEV = q.get("dev") === "1";
   window.dataLayer=window.dataLayer||[];
   window.gtag=function(){ dataLayer.push(arguments); };
   gtag("js", new Date());
-  gtag("config", CONFIG.gaId);
+  // 1回目と2回目を別ページとして記録する（レポートで区別できる）
+  const isEx = q.get("extra")==="1";
+  gtag("config", CONFIG.gaId, {
+    page_title: isEx ? "なぞとき｜2回目(エクストラ)" : "なぞとき｜1回目(本編)",
+    page_path : isEx ? "/nazotoki/extra" : "/nazotoki/main"
+  });
 })();
 function track(name, params){
-  try{ if(window.gtag) gtag("event", name, params||{}); }catch(e){}
+  try{
+    if(window.gtag) gtag("event", name, Object.assign(
+      { stage: q.get("extra")==="1" ? "extra" : "main" }, params||{}));
+  }catch(e){}
 }
 
 // 表記ゆれ吸収：前後空白/空白全般除去・全角英数→半角・ひらがな→カタカナ・大文字化
