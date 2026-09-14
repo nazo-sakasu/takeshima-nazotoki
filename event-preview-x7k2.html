@@ -175,56 +175,79 @@ footer .ext{color:rgba(247,239,226,.72);text-decoration:none;
 footer .ext:hover{color:var(--gold);border-color:var(--gold)}
 footer .x{margin:0 .6em;opacity:.5}
 
-/* ---- 背景の泡（ごく淡く、ゆっくり） ---- */
+/* ---- 深海の気泡（薄い膜と縁のハイライト） ---- */
 .bubbles{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.bubbles i{position:absolute;bottom:-8vh;border-radius:50%;
-  background:radial-gradient(circle at 34% 30%,rgba(255,255,255,.5),rgba(255,255,255,.05) 62%,transparent 72%);
-  opacity:0}
+.bubbles i{position:absolute;bottom:-10vh;border-radius:50%;opacity:0;
+  /* 内側は空洞、縁だけが光る＝水中の泡の見え方 */
+  background:
+    radial-gradient(circle at 30% 26%, rgba(255,255,255,.95) 0 4%, rgba(255,255,255,.28) 9%, transparent 16%),
+    radial-gradient(circle at 68% 74%, rgba(190,225,240,.30) 0 8%, transparent 20%),
+    radial-gradient(circle at 50% 50%, transparent 52%, rgba(180,215,235,.20) 74%, rgba(225,245,255,.42) 90%, transparent 100%);
+  box-shadow:inset 0 0 6px rgba(255,255,255,.14);
+  filter:blur(.15px)}
 @media (prefers-reduced-motion:no-preference){
-  .bubbles i{animation:rise linear infinite}
+  .bubbles i{animation:rise var(--dur,28s) cubic-bezier(.36,.06,.5,1) infinite,
+                       sway var(--sway,6s) ease-in-out infinite alternate}
 }
+/* 上るほど少しだけ膨らみ、水面近くで消える */
 @keyframes rise{
-  0%  {transform:translateY(0) translateX(0);opacity:0}
-  12% {opacity:.32}
-  88% {opacity:.22}
-  100%{transform:translateY(-118vh) translateX(var(--dx,14px));opacity:0}
+  0%  {transform:translateY(0) scale(.82);opacity:0}
+  8%  {opacity:var(--peak,.34)}
+  70% {opacity:var(--peak,.34)}
+  100%{transform:translateY(-120vh) scale(1.12);opacity:0}
+}
+/* 左右にゆらぐ（rise と別軸で重ねる） */
+@keyframes sway{
+  from{margin-left:calc(var(--amp,10px) * -1)}
+  to  {margin-left:var(--amp,10px)}
 }
 /* 本文は泡より前面に */
 .hero,.sec,.close,footer{position:relative;z-index:1}
 
-/* ---- タケアシ君がひょこっと出る ---- */
+/* ---- タケアシ君が斜めにひょこっと出る ---- */
 .peek{position:fixed;z-index:3;pointer-events:none;
-  width:clamp(78px,17vw,124px);opacity:0;will-change:transform,opacity}
-.peek img{width:100%;display:block;filter:drop-shadow(0 8px 18px rgba(0,0,0,.55))}
-/* 下から */
-.peek.from-b{bottom:0;transform:translateY(102%)}
-.peek.from-b.show{animation:peekB var(--dur,5s) cubic-bezier(.3,1.4,.5,1) forwards}
-@keyframes peekB{
-  0%{transform:translateY(102%) rotate(0deg);opacity:0}
-  9%{transform:translateY(24%) rotate(-3deg);opacity:1}
-  16%{transform:translateY(34%) rotate(2deg);opacity:1}
-  22%,78%{transform:translateY(28%) rotate(0deg);opacity:1}
-  92%,100%{transform:translateY(102%) rotate(0deg);opacity:0}
+  width:clamp(80px,18vw,132px);opacity:0;will-change:transform,opacity}
+.peek img{width:100%;display:block;filter:drop-shadow(0 10px 22px rgba(0,0,0,.6))}
+
+/* 左下から右上へ斜めに顔を出す */
+.peek.c-bl{left:0;bottom:0}
+.peek.c-bl.show{animation:peekBL var(--dur,5.4s) cubic-bezier(.26,1.5,.45,1) forwards}
+@keyframes peekBL{
+  0%       {transform:translate(-88%,88%) rotate(-26deg);opacity:0}
+  10%      {transform:translate(-16%,16%) rotate(-14deg);opacity:1}
+  18%      {transform:translate(-26%,26%) rotate(-22deg);opacity:1}
+  24%,76%  {transform:translate(-21%,21%) rotate(-18deg);opacity:1}
+  92%,100% {transform:translate(-88%,88%) rotate(-26deg);opacity:0}
 }
-/* 左から */
-.peek.from-l{left:0;transform:translateX(-102%)}
-.peek.from-l.show{animation:peekL var(--dur,5s) cubic-bezier(.3,1.4,.5,1) forwards}
-@keyframes peekL{
-  0%{transform:translateX(-102%) rotate(0deg);opacity:0}
-  9%{transform:translateX(-28%) rotate(5deg);opacity:1}
-  16%{transform:translateX(-38%) rotate(-3deg);opacity:1}
-  22%,78%{transform:translateX(-33%) rotate(0deg);opacity:1}
-  92%,100%{transform:translateX(-102%) rotate(0deg);opacity:0}
+/* 右下から左上へ */
+.peek.c-br{right:0;bottom:0}
+.peek.c-br.show{animation:peekBR var(--dur,5.4s) cubic-bezier(.26,1.5,.45,1) forwards}
+@keyframes peekBR{
+  0%       {transform:translate(88%,88%) rotate(26deg);opacity:0}
+  10%      {transform:translate(16%,16%) rotate(14deg);opacity:1}
+  18%      {transform:translate(26%,26%) rotate(22deg);opacity:1}
+  24%,76%  {transform:translate(21%,21%) rotate(18deg);opacity:1}
+  92%,100% {transform:translate(88%,88%) rotate(26deg);opacity:0}
 }
-/* 右から */
-.peek.from-r{right:0;transform:translateX(102%)}
-.peek.from-r.show{animation:peekR var(--dur,5s) cubic-bezier(.3,1.4,.5,1) forwards}
-@keyframes peekR{
-  0%{transform:translateX(102%) rotate(0deg);opacity:0}
-  9%{transform:translateX(28%) rotate(-5deg);opacity:1}
-  16%{transform:translateX(38%) rotate(3deg);opacity:1}
-  22%,78%{transform:translateX(33%) rotate(0deg);opacity:1}
-  92%,100%{transform:translateX(102%) rotate(0deg);opacity:0}
+/* 左上から斜め下へ（逆さにならないよう控えめに） */
+.peek.c-tl{left:0;top:0}
+.peek.c-tl.show{animation:peekTL var(--dur,5.4s) cubic-bezier(.26,1.5,.45,1) forwards}
+@keyframes peekTL{
+  0%       {transform:translate(-88%,-88%) rotate(22deg);opacity:0}
+  10%      {transform:translate(-18%,-22%) rotate(12deg);opacity:1}
+  18%      {transform:translate(-28%,-32%) rotate(19deg);opacity:1}
+  24%,76%  {transform:translate(-23%,-27%) rotate(16deg);opacity:1}
+  92%,100% {transform:translate(-88%,-88%) rotate(22deg);opacity:0}
+}
+/* 右上から斜め下へ */
+.peek.c-tr{right:0;top:0}
+.peek.c-tr.show{animation:peekTR var(--dur,5.4s) cubic-bezier(.26,1.5,.45,1) forwards}
+@keyframes peekTR{
+  0%       {transform:translate(88%,-88%) rotate(-22deg);opacity:0}
+  10%      {transform:translate(18%,-22%) rotate(-12deg);opacity:1}
+  18%      {transform:translate(28%,-32%) rotate(-19deg);opacity:1}
+  24%,76%  {transform:translate(23%,-27%) rotate(-16deg);opacity:1}
+  92%,100% {transform:translate(88%,-88%) rotate(-22deg);opacity:0}
 }
 @media (prefers-reduced-motion:reduce){.peek{display:none}}
 </style>
@@ -385,46 +408,59 @@ footer .x{margin:0 .6em;opacity:.5}
 </footer>
 
 <script>
-/* たまーーに、タケアシ君がひょこっと出てくる */
+/* たまーーに、タケアシ君が斜めにひょこっと出てくる */
 (function(){
   if(matchMedia("(prefers-reduced-motion:reduce)").matches) return;
   var layer=document.getElementById("peekLayer");
   var imgs=["take1.webp","take2.webp","take3.webp","take4.webp"];
-  var sides=["from-b","from-b","from-l","from-r"];   // 下からがやや多め
-  var busy=false;
+  // 下の角からが多め（上から出ると読み始めに被りやすいため）
+  var corners=["c-bl","c-br","c-bl","c-br","c-tl","c-tr"];
+  var busy=false, last="";
 
   function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
 
   function appear(){
     if(busy||document.hidden){ schedule(); return; }
     busy=true;
-    var side=pick(sides), el=document.createElement("div");
-    el.className="peek "+side;
+    var c=pick(corners);
+    if(c===last) c=pick(corners);        // 同じ角が続かないように
+    last=c;
+    var el=document.createElement("div");
+    el.className="peek "+c;
     el.style.setProperty("--dur","5.4s");
-    if(side==="from-b"){ el.style.left=(8+Math.random()*74).toFixed(1)+"%"; }
-    else { el.style.top=(22+Math.random()*54).toFixed(1)+"%"; }
+    // 角からの距離を少しずらして、毎回同じ位置に出ないようにする
+    var off=(4+Math.random()*13).toFixed(1)+"%";
+    if(c==="c-bl"||c==="c-tl") el.style.marginLeft=off; else el.style.marginRight=off;
+    if(c==="c-bl"||c==="c-br") el.style.marginBottom=(2+Math.random()*8).toFixed(1)+"%";
+    else el.style.marginTop=(2+Math.random()*8).toFixed(1)+"%";
     el.innerHTML='<img src="'+pick(imgs)+'" alt="">';
     layer.appendChild(el);
     requestAnimationFrame(function(){ el.classList.add("show"); });
     setTimeout(function(){ el.remove(); busy=false; schedule(); }, 5600);
   }
   function schedule(){
-    // 25〜55秒に一度だけ、ひょこっと
-    setTimeout(appear, 25000+Math.random()*30000);
+    setTimeout(appear, 25000+Math.random()*30000);   // 25〜55秒に一度
   }
   schedule();
 })();
 
-/* 背景の泡を生成（控えめに18粒） */
+/* 背景の気泡を生成（大小まぜて26粒） */
 (function(){
   if(matchMedia("(prefers-reduced-motion:reduce)").matches) return;
   var box=document.getElementById("bubbles"),html="";
-  for(var i=0;i<18;i++){
-    var s=(3+Math.random()*8).toFixed(1);
-    html+='<i style="width:'+s+'px;height:'+s+'px;left:'+(Math.random()*100).toFixed(1)+'%;'
-        + '--dx:'+((Math.random()*50-25)|0)+'px;'
-        + 'animation-duration:'+(20+Math.random()*22).toFixed(1)+'s;'
-        + 'animation-delay:-'+(Math.random()*30).toFixed(1)+'s"></i>';
+  for(var i=0;i<26;i++){
+    // 小さい粒を多めに、たまに大きい粒（自然界の分布に寄せる）
+    var r=Math.random();
+    var s=(r<.62 ? 2+Math.random()*4 : r<.9 ? 6+Math.random()*6 : 12+Math.random()*9);
+    // 小さい粒ほど速く、大きい粒ほどゆっくり昇る
+    var dur=(34-s*0.55)+Math.random()*14;
+    html+='<i style="width:'+s.toFixed(1)+'px;height:'+s.toFixed(1)+'px;'
+        + 'left:'+(Math.random()*100).toFixed(1)+'%;'
+        + '--dur:'+dur.toFixed(1)+'s;'
+        + '--sway:'+(4+Math.random()*5).toFixed(1)+'s;'
+        + '--amp:'+(5+Math.random()*16).toFixed(0)+'px;'
+        + '--peak:'+(0.16+Math.random()*0.26).toFixed(2)+';'
+        + 'animation-delay:-'+(Math.random()*40).toFixed(1)+'s,-'+(Math.random()*6).toFixed(1)+'s"></i>';
   }
   box.innerHTML=html;
 })();
