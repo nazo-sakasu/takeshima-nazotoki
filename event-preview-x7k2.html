@@ -64,6 +64,7 @@ a{color:inherit}
 .fact dt{font-size:clamp(11.5px,3.1vw,13px);font-weight:700;letter-spacing:.1em;opacity:.72;margin-bottom:2px}
 .fact dd{font-family:var(--serif);font-weight:800;
   font-size:clamp(23px,6.6vw,32px);letter-spacing:.01em;line-height:1.3}
+.fact dd .yr{font-family:var(--sans);font-weight:700;font-size:clamp(11px,3vw,13px);letter-spacing:.06em;opacity:.72;margin-right:5px;vertical-align:2px}
 .fact dd small{font-family:var(--sans);font-weight:500;font-size:clamp(11px,3vw,12.5px);opacity:.7;margin-left:4px}
 .hero-fine{font-size:clamp(11.5px,3.1vw,13px);line-height:1.9;opacity:.75}
 @media (prefers-reduced-motion:no-preference){
@@ -99,10 +100,10 @@ a{color:inherit}
 .sign small{display:block;font-size:10.5px;letter-spacing:.14em;opacity:.55;margin-bottom:7px}
 
 /* ============ 3. 中身 ============ */
-.count{display:flex;align-items:baseline;gap:16px;margin:clamp(30px,7vw,48px) 0 6px;
+.count{display:flex;align-items:baseline;gap:2px;margin:clamp(30px,7vw,48px) 0 6px;
   font-family:var(--serif)}
 .count b{font-size:clamp(66px,20vw,124px);font-weight:800;line-height:.82;
-  letter-spacing:-.03em;color:var(--gold)}
+  letter-spacing:-.06em;color:var(--gold);margin-right:-.06em}
 .count i{font-style:normal;font-weight:700;font-size:clamp(14px,3.9vw,18px);
   color:rgba(247,239,226,.8)}
 
@@ -114,11 +115,12 @@ a{color:inherit}
 .item img{margin:0 auto;max-height:172px;width:auto}
 /* 変なスケールだけ、ゆっくり伸び縮みする */
 @media (prefers-reduced-motion:no-preference){
-  .item-scale img{animation:breathe 4.6s ease-in-out infinite;transform-origin:center}
+  .item-scale{padding:14px 0}
+  .item-scale img{animation:breathe 5.2s ease-in-out infinite;transform-origin:center}
   @keyframes breathe{
     0%,100%{transform:scale(1) rotate(0deg)}
-    35%    {transform:scale(1.085) rotate(-1.2deg)}
-    70%    {transform:scale(.965) rotate(1deg)}
+    30%    {transform:scale(1.32) rotate(-2.5deg)}
+    62%    {transform:scale(.86) rotate(2deg)}
   }
 }
 .item figcaption{margin-top:12px;font-family:var(--serif);font-weight:700;
@@ -180,8 +182,8 @@ footer .cr{margin-top:15px;font-size:10.5px;line-height:2.1;color:rgba(247,239,2
     <div class="wrap">
       <p class="hero-copy">館内を巡って謎を解け。<br class="br-sp">水族館を観察しながら楽しもう！</p>
       <dl class="hero-facts">
-        <div class="fact"><dt>開催期間</dt><dd>9/11〜11/15</dd></div>
-        <div class="fact"><dt>参加料金</dt><dd>800円<small>／1キット</small></dd></div>
+        <div class="fact"><dt>開催期間</dt><dd><span class="yr">2026年</span>9/11〜11/15</dd></div>
+        <div class="fact"><dt>参加料金</dt><dd>800円<small>税込／1キット</small></dd></div>
         <div class="fact"><dt>所要時間</dt><dd>約60〜90分</dd></div>
       </dl>
       <p class="hero-fine">入館ゲートで販売中・数量限定。参加には別途、水族館の入館料が必要です。</p>
@@ -281,9 +283,9 @@ footer .cr{margin-top:15px;font-size:10.5px;line-height:2.1;color:rgba(247,239,2
     <span class="label">開催概要</span>
     <h2 class="h2">おでかけの前に。</h2>
     <dl class="facts2">
-      <div><dt>開催期間</dt><dd><b>9月11日 〜 11月15日</b></dd></div>
+      <div><dt>開催期間</dt><dd><b>2026年9月11日 〜 11月15日</b></dd></div>
       <div><dt>会場</dt><dd>竹島水族館<br>（愛知県蒲郡市竹島町1-6）</dd></div>
-      <div><dt>参加料金</dt><dd><b>800円</b>（1キット）<br>別途、水族館の入館料が必要です。</dd></div>
+      <div><dt>参加料金</dt><dd><b>800円</b>（税込・1キット）<br>別途、水族館の入館料が必要です。</dd></div>
       <div><dt>所要時間</dt><dd>約60〜90分<br><span class="note">※謎解きにかかるおおよその時間です。水族館をゆっくりお楽しみいただく場合は、時間に余裕をもってお越しください。</span></dd></div>
       <div><dt>キット販売</dt><dd>入館ゲートにて購入できます。【数量限定】</dd></div>
       <div><dt>対象</dt><dd>親子でも、大人だけでも楽しめます。</dd></div>
