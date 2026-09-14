@@ -47,12 +47,12 @@ a{color:inherit}
 
 /* ============ 1. ヒーロー（KVが主役） ============ */
 .hero{position:relative;background:var(--void)}
-.hero-kv{position:relative;width:100%;max-width:760px;margin:0 auto}
+.hero-kv{position:relative;z-index:2;width:100%;max-width:760px;margin:0 auto}
 .hero-kv img{width:100%}
 .hero-kv::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:26%;
   background:linear-gradient(to bottom,transparent,var(--void))}
 /* KV下の黄色バナー：ポスターと同じ構造で要点を出す */
-.hero-band{background:var(--gold);color:#000;padding:clamp(28px,7vw,42px) 0 clamp(30px,7vw,44px)}
+.hero-band{position:relative;z-index:2;background:var(--gold);color:#000;padding:clamp(28px,7vw,42px) 0 clamp(30px,7vw,44px)}
 .hero-band .wrap{display:flex;flex-direction:column;gap:clamp(16px,4vw,22px)}
 .hero-copy{font-family:var(--serif);font-weight:800;
   font-size:clamp(19px,5.4vw,29px);line-height:1.6;letter-spacing:.02em}
@@ -83,8 +83,8 @@ a{color:inherit}
   color:rgba(247,239,226,.76);max-width:33em}
 
 /* ============ 2. 手紙 ============ */
-.letter-sec{background:var(--deep)}
-.sheet{position:relative;background:var(--paper);color:var(--ink);
+.letter-sec{background:var(--deep);z-index:1}
+.sheet{position:relative;z-index:2;background:var(--paper);color:var(--ink);
   padding:clamp(34px,8vw,58px) clamp(24px,6.5vw,52px) clamp(40px,8vw,56px);
   transform:rotate(-.5deg);box-shadow:0 30px 70px rgba(0,0,0,.6);
   background-image:radial-gradient(110% 60% at 50% 0,rgba(0,0,0,.045),transparent 62%)}
@@ -108,7 +108,7 @@ a{color:inherit}
   color:rgba(247,239,226,.8)}
 
 /* ============ 4. キット ============ */
-.kit-sec{background:var(--deep)}
+.kit-sec{background:var(--deep);z-index:1}
 .desk{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));
   gap:clamp(20px,5vw,34px) clamp(14px,3.4vw,22px);margin-top:clamp(34px,7vw,50px)}
 .item{margin:0;text-align:center}
@@ -141,7 +141,7 @@ a{color:inherit}
 .flow p{font-size:clamp(13px,3.5vw,14.5px);line-height:2;color:rgba(247,239,226,.68)}
 
 /* ============ 6. 助け ============ */
-.help-sec{background:var(--deep)}
+.help-sec{background:var(--deep);z-index:1}
 .help-grid{display:grid;gap:14px;margin-top:clamp(28px,6vw,40px)}
 .card{border:1px solid rgba(247,239,226,.16);padding:clamp(24px,5.5vw,32px);background:rgba(0,0,0,.3)}
 .card h3{font-family:var(--serif);font-weight:800;font-size:clamp(16px,4.3vw,19.5px);margin-bottom:11px}
@@ -168,10 +168,70 @@ a{color:inherit}
 .close .accent{color:var(--gold)}
 footer{background:var(--void);text-align:center;padding:0 0 54px}
 footer .ttl{font-family:var(--serif);font-weight:700;font-size:14.5px;letter-spacing:.06em;color:rgba(247,239,226,.7)}
-footer .cr{margin-top:15px;font-size:10.5px;line-height:2.1;color:rgba(247,239,226,.38)}
+footer .cr{margin-top:15px;font-size:10.5px;line-height:2.3;color:rgba(247,239,226,.38)}
+footer .ext{color:rgba(247,239,226,.72);text-decoration:none;
+  border-bottom:1px solid rgba(255,192,0,.45);padding-bottom:2px;font-size:12px;
+  transition:color .2s,border-color .2s}
+footer .ext:hover{color:var(--gold);border-color:var(--gold)}
+footer .x{margin:0 .6em;opacity:.5}
+
+/* ---- 背景の泡（ごく淡く、ゆっくり） ---- */
+.bubbles{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bubbles i{position:absolute;bottom:-8vh;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,rgba(255,255,255,.5),rgba(255,255,255,.05) 62%,transparent 72%);
+  opacity:0}
+@media (prefers-reduced-motion:no-preference){
+  .bubbles i{animation:rise linear infinite}
+}
+@keyframes rise{
+  0%  {transform:translateY(0) translateX(0);opacity:0}
+  12% {opacity:.32}
+  88% {opacity:.22}
+  100%{transform:translateY(-118vh) translateX(var(--dx,14px));opacity:0}
+}
+/* 本文は泡より前面に */
+.hero,.sec,.close,footer{position:relative;z-index:1}
+
+/* ---- タケアシ君がひょこっと出る ---- */
+.peek{position:fixed;z-index:3;pointer-events:none;
+  width:clamp(78px,17vw,124px);opacity:0;will-change:transform,opacity}
+.peek img{width:100%;display:block;filter:drop-shadow(0 8px 18px rgba(0,0,0,.55))}
+/* 下から */
+.peek.from-b{bottom:0;transform:translateY(102%)}
+.peek.from-b.show{animation:peekB var(--dur,5s) cubic-bezier(.3,1.4,.5,1) forwards}
+@keyframes peekB{
+  0%{transform:translateY(102%) rotate(0deg);opacity:0}
+  9%{transform:translateY(24%) rotate(-3deg);opacity:1}
+  16%{transform:translateY(34%) rotate(2deg);opacity:1}
+  22%,78%{transform:translateY(28%) rotate(0deg);opacity:1}
+  92%,100%{transform:translateY(102%) rotate(0deg);opacity:0}
+}
+/* 左から */
+.peek.from-l{left:0;transform:translateX(-102%)}
+.peek.from-l.show{animation:peekL var(--dur,5s) cubic-bezier(.3,1.4,.5,1) forwards}
+@keyframes peekL{
+  0%{transform:translateX(-102%) rotate(0deg);opacity:0}
+  9%{transform:translateX(-28%) rotate(5deg);opacity:1}
+  16%{transform:translateX(-38%) rotate(-3deg);opacity:1}
+  22%,78%{transform:translateX(-33%) rotate(0deg);opacity:1}
+  92%,100%{transform:translateX(-102%) rotate(0deg);opacity:0}
+}
+/* 右から */
+.peek.from-r{right:0;transform:translateX(102%)}
+.peek.from-r.show{animation:peekR var(--dur,5s) cubic-bezier(.3,1.4,.5,1) forwards}
+@keyframes peekR{
+  0%{transform:translateX(102%) rotate(0deg);opacity:0}
+  9%{transform:translateX(28%) rotate(-5deg);opacity:1}
+  16%{transform:translateX(38%) rotate(3deg);opacity:1}
+  22%,78%{transform:translateX(33%) rotate(0deg);opacity:1}
+  92%,100%{transform:translateX(102%) rotate(0deg);opacity:0}
+}
+@media (prefers-reduced-motion:reduce){.peek{display:none}}
 </style>
 </head>
 <body>
+<div class="bubbles" id="bubbles" aria-hidden="true"></div>
+<div id="peekLayer" aria-hidden="true"></div>
 
 <!-- 1 ── ヒーロー ── -->
 <header class="hero">
@@ -283,7 +343,7 @@ footer .cr{margin-top:15px;font-size:10.5px;line-height:2.1;color:rgba(247,239,2
     <span class="label">開催概要</span>
     <h2 class="h2">おでかけの前に。</h2>
     <dl class="facts2">
-      <div><dt>開催期間</dt><dd><b>2026年9月11日 〜 11月15日</b></dd></div>
+      <div><dt>開催期間</dt><dd><b>2026年<br>9月11日 〜 11月15日</b></dd></div>
       <div><dt>会場</dt><dd>竹島水族館<br>（愛知県蒲郡市竹島町1-6）</dd></div>
       <div><dt>参加料金</dt><dd><b>800円</b>（税込・1キット）<br>別途、水族館の入館料が必要です。</dd></div>
       <div><dt>所要時間</dt><dd>約60〜90分<br><span class="note">※謎解きにかかるおおよその時間です。水族館をゆっくりお楽しみいただく場合は、時間に余裕をもってお越しください。</span></dd></div>
@@ -315,11 +375,59 @@ footer .cr{margin-top:15px;font-size:10.5px;line-height:2.1;color:rgba(247,239,2
 <footer>
   <div class="wrap">
     <p class="ttl">謎解き「この水族館、なんか変。」</p>
-    <p class="cr">竹島水族館 × WeeekEnd!<br>主催：一般社団法人海みなと蒲郡</p>
+    <p class="cr">
+      <a class="ext" href="https://www.takesuideepsea.com/" target="_blank" rel="noopener">竹島水族館</a>
+      <span class="x">×</span>
+      <a class="ext" href="https://www.weeek-end.com/" target="_blank" rel="noopener">WeeekEnd!</a>
+      <br>主催：一般社団法人海みなと蒲郡
+    </p>
   </div>
 </footer>
 
 <script>
+/* たまーーに、タケアシ君がひょこっと出てくる */
+(function(){
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  var layer=document.getElementById("peekLayer");
+  var imgs=["take1.webp","take2.webp","take3.webp","take4.webp"];
+  var sides=["from-b","from-b","from-l","from-r"];   // 下からがやや多め
+  var busy=false;
+
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+
+  function appear(){
+    if(busy||document.hidden){ schedule(); return; }
+    busy=true;
+    var side=pick(sides), el=document.createElement("div");
+    el.className="peek "+side;
+    el.style.setProperty("--dur","5.4s");
+    if(side==="from-b"){ el.style.left=(8+Math.random()*74).toFixed(1)+"%"; }
+    else { el.style.top=(22+Math.random()*54).toFixed(1)+"%"; }
+    el.innerHTML='<img src="'+pick(imgs)+'" alt="">';
+    layer.appendChild(el);
+    requestAnimationFrame(function(){ el.classList.add("show"); });
+    setTimeout(function(){ el.remove(); busy=false; schedule(); }, 5600);
+  }
+  function schedule(){
+    // 25〜55秒に一度だけ、ひょこっと
+    setTimeout(appear, 25000+Math.random()*30000);
+  }
+  schedule();
+})();
+
+/* 背景の泡を生成（控えめに18粒） */
+(function(){
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  var box=document.getElementById("bubbles"),html="";
+  for(var i=0;i<18;i++){
+    var s=(3+Math.random()*8).toFixed(1);
+    html+='<i style="width:'+s+'px;height:'+s+'px;left:'+(Math.random()*100).toFixed(1)+'%;'
+        + '--dx:'+((Math.random()*50-25)|0)+'px;'
+        + 'animation-duration:'+(20+Math.random()*22).toFixed(1)+'s;'
+        + 'animation-delay:-'+(Math.random()*30).toFixed(1)+'s"></i>';
+  }
+  box.innerHTML=html;
+})();
 (function(){var ID="G-MVNJE2YFSL";var s=document.createElement("script");s.async=true;
  s.src="https://www.googletagmanager.com/gtag/js?id="+ID;document.head.appendChild(s);
  window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};
