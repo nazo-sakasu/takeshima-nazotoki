@@ -114,12 +114,22 @@ a{color:inherit}
 .item img{margin:0 auto;max-height:172px;width:auto}
 /* 変なスケールだけ、ゆっくり伸び縮みする */
 @media (prefers-reduced-motion:no-preference){
-  .item-scale{padding:14px 0}
-  .item-scale img{animation:breathe 5.2s ease-in-out infinite;transform-origin:center}
-  @keyframes breathe{
-    0%,100%{transform:scale(1) rotate(0deg)}
-    30%    {transform:scale(1.32) rotate(-2.5deg)}
-    62%    {transform:scale(.86) rotate(2deg)}
+  .item-scale{padding:20px 0}
+  .item-scale img{animation:crabby 7.4s cubic-bezier(.42,.02,.36,1) infinite;
+    transform-origin:center bottom;will-change:transform}
+  @keyframes crabby{
+    0%  {transform:translate(0,0)      rotate(0)     scale(1)}
+    7%  {transform:translate(0,-7px)   rotate(-3.5deg) scale(1.14)}
+    15% {transform:translate(-11px,0)  rotate(2.5deg)  scale(1.03)}
+    23% {transform:translate(-5px,-9px)rotate(-2deg)   scale(1.26)}
+    33% {transform:translate(11px,0)   rotate(4deg)    scale(1.06)}
+    43% {transform:translate(4px,-6px) rotate(-1.5deg) scale(1.34)}
+    53% {transform:translate(0,1px)    rotate(0)       scale(.86)}
+    63% {transform:translate(-7px,-4px)rotate(3deg)    scale(1.08)}
+    73% {transform:translate(7px,0)    rotate(-3deg)   scale(1.18)}
+    83% {transform:translate(0,-5px)   rotate(1.5deg)  scale(.93)}
+    92% {transform:translate(0,0)      rotate(-.5deg)  scale(1.02)}
+    100%{transform:translate(0,0)      rotate(0)       scale(1)}
   }
 }
 .item figcaption{margin-top:12px;font-family:var(--serif);font-weight:700;
