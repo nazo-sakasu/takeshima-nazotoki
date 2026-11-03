@@ -263,13 +263,79 @@ footer .x{margin:0 .6em;opacity:.5}
   92%,100% {transform:translate(88%,-88%) rotate(-22deg);opacity:0}
 }
 @media (prefers-reduced-motion:reduce){.peek{display:none}}
+
+/* ================= 期間延長モード ================= */
+/* 赤帯バナー（通常時は非表示／11/9 9:00から表示） */
+.ext-band{display:none;background:#ff0000;color:#fff;text-align:center;
+  padding:clamp(16px,4.2vw,26px) 20px clamp(18px,4.4vw,28px);position:relative;z-index:70}
+.extended .ext-band{display:block}
+.ext-main{font-family:var(--serif);font-weight:800;
+  font-size:clamp(23px,7vw,42px);line-height:1.3;letter-spacing:.04em;
+  text-shadow:0 2px 10px rgba(0,0,0,.18)}
+.ext-sub{margin-top:clamp(6px,1.8vw,10px);font-family:var(--serif);font-weight:700;
+  font-size:clamp(13.5px,3.9vw,21px);line-height:1.5;letter-spacing:.06em;opacity:.97}
+@media (prefers-reduced-motion:no-preference){
+  .extended .ext-band{animation:bandIn .7s cubic-bezier(.2,.9,.3,1) both}
+  @keyframes bandIn{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+}
+/* 延長後の終了日：ぐっと大きくなって目に留まる */
+.end-pop{display:inline-block;position:relative;font-size:1.32em;line-height:1;
+  transform-origin:left bottom;margin-left:.06em}
+/* 延長で変わる文言 */
+.ext-note{display:block;margin-top:7px;font-weight:700;color:#7a1a00}
+.facts2 .ext-small{display:block;margin-top:6px;font-size:11.5px;line-height:1.85;
+  color:rgba(247,239,226,.58)}
+
+/* ---- 紙吹雪（タケアシ君とカニ定規） ---- */
+.confetti{position:fixed;inset:0;z-index:60;pointer-events:none;overflow:hidden}
+.cf{position:absolute;top:-16vh;will-change:transform}
+.cf img{display:block;width:100%;height:auto}
+@media (prefers-reduced-motion:no-preference){
+  .cf{animation:cfFall var(--d,6s) linear var(--dl,0s) forwards,
+               cfSway var(--s,2s) ease-in-out var(--dl,0s) infinite alternate}
+  .cf img{animation:cfSpin var(--r,3.4s) linear var(--dl,0s) infinite}
+}
+@keyframes cfFall{
+  0%  {transform:translateY(0);opacity:0}
+  6%  {opacity:1}
+  86% {opacity:1}
+  100%{transform:translateY(125vh);opacity:0}
+}
+@keyframes cfSway{from{margin-left:calc(var(--a,20px) * -1)}to{margin-left:var(--a,20px)}}
+@keyframes cfSpin{to{transform:rotate(360deg)}}
+.cf-sign img{filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
+@media (prefers-reduced-motion:no-preference){
+  .cf.cf-sign img{animation:cfWobble var(--r,2s) ease-in-out var(--dl,0s) infinite alternate}
+}
+@keyframes cfWobble{from{transform:rotate(-13deg)}to{transform:rotate(13deg)}}
+@media (prefers-reduced-motion:reduce){.confetti{display:none}}
 </style>
+<script>
+/* 期間延長モードの判定（描画前に決めてレイアウトのズレを防ぐ） */
+var EXT = {
+  startAt : "2026-11-09T09:00:00+09:00",   // ← 切り替わる日時（日本時間）
+  endLabel: "12/20",
+  endFull : "12月20日"
+};
+(function(){
+  var q=new URLSearchParams(location.search), f=q.get("ext");
+  window.__EXT_ON = f==="1" ? true : f==="0" ? false
+                  : (Date.now() >= new Date(EXT.startAt).getTime());
+  if(window.__EXT_ON) document.documentElement.classList.add("extended");
+})();
+</script>
 </head>
 <body>
 <div class="bubbles" id="bubbles" aria-hidden="true"></div>
 <div id="peekLayer" aria-hidden="true"></div>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
 
 <!-- 1 ── ヒーロー ── -->
+<div class="ext-band" id="extBand">
+  <p class="ext-main">大好評につき期間延長！</p>
+  <p class="ext-sub">キットがなくなり次第終了！</p>
+</div>
+
 <header class="hero">
   <div class="hero-kv">
     <img src="kv-square.webp" alt="謎解き この水族館、なんか変。 竹島水族館" width="1080" height="1080" fetchpriority="high">
@@ -278,11 +344,11 @@ footer .x{margin:0 .6em;opacity:.5}
     <div class="wrap">
       <p class="hero-copy">館内を巡って謎を解け。<br class="br-sp">水族館を観察しながら楽しもう！</p>
       <dl class="hero-facts">
-        <div class="fact"><dt>開催期間</dt><dd><span class="yr">2026年</span>9/11〜11/15</dd></div>
+        <div class="fact"><dt>開催期間</dt><dd id="heroTerm"><span class="yr">2026年</span>9/11〜11/15</dd></div>
         <div class="fact"><dt>参加料金</dt><dd>800円<small>税込／1キット</small></dd></div>
         <div class="fact"><dt>所要時間</dt><dd>約60〜90分</dd></div>
       </dl>
-      <p class="hero-fine">入館ゲートで販売中・数量限定。参加には別途、水族館の入館料が必要です。</p>
+      <p class="hero-fine" id="heroFine">入館ゲートで販売中・数量限定。参加には別途、水族館の入館料が必要です。</p>
     </div>
   </div>
 </header>
@@ -345,7 +411,7 @@ footer .x{margin:0 .6em;opacity:.5}
     <h2 class="h2">キットを持って、<br>館内へ。</h2>
     <ol class="flow">
       <li><div><h3>入館ゲートでキットを買う</h3>
-        <p>入館チケットの購入時に買えます。数量限定なので、お早めに！</p></div></li>
+        <p id="flowBuy">入館チケットの購入時に買えます。数量限定なので、お早めに！</p></div></li>
       <li><div><h3>館内を巡って謎を解く</h3>
         <p>展示を観察しながら進みます。必要なものは写真に撮って、少し離れた場所で考えるのがおすすめです。</p>
         <p class="tip">館内は混み合う場合がございます。バインダーをお持ちいただくと、より快適に謎解きをお楽しみいただけます。</p></div></li>
@@ -380,11 +446,11 @@ footer .x{margin:0 .6em;opacity:.5}
     <span class="label">開催概要</span>
     <h2 class="h2">おでかけの前に。</h2>
     <dl class="facts2">
-      <div><dt>開催期間</dt><dd><b>2026年<br>9月11日 〜 11月15日</b></dd></div>
+      <div><dt>開催期間</dt><dd id="infoTerm"><b>2026年<br>9月11日 〜 11月15日</b></dd></div>
       <div><dt>会場</dt><dd>竹島水族館<br>（愛知県蒲郡市竹島町1-6）</dd></div>
       <div><dt>参加料金</dt><dd><b>800円</b>（税込・1キット）<br>別途、水族館の入館料が必要です。</dd></div>
       <div><dt>所要時間</dt><dd>約60〜90分<br><span class="note">※謎解きにかかるおおよその時間です。水族館をゆっくりお楽しみいただく場合は、時間に余裕をもってお越しください。</span></dd></div>
-      <div><dt>キット販売</dt><dd>入館ゲートにて購入できます。【数量限定】</dd></div>
+      <div><dt>キット販売</dt><dd id="infoKit">入館ゲートにて購入できます。【数量限定】</dd></div>
       <div><dt>対象</dt><dd>親子でも、大人だけでも楽しめます。</dd></div>
       <div><dt>アクセス</dt><dd>
         <b class="acc">電車</b>JR・名鉄「蒲郡」駅南口から徒歩約15分<br>
@@ -482,6 +548,77 @@ footer .x{margin:0 .6em;opacity:.5}
  s.src="https://www.googletagmanager.com/gtag/js?id="+ID;document.head.appendChild(s);
  window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};
  gtag("js",new Date());gtag("config",ID,{page_title:"なぞとき｜告知",page_path:"/nazotoki/event"});})();
+</script>
+<script>
+/* =====================================================================
+   期間延長モード（2026年11月9日 9:00 から自動で切り替わります）
+   ・それまでは 11/15 までの通常表示
+   ・テスト用  ?ext=1 … 今すぐ延長表示／?ext=0 … 通常表示に固定
+   ===================================================================== */
+(function(){
+  if(!window.__EXT_ON) return;
+
+  /* --- 文言を延長後のものへ差し替え --- */
+  var t=document.getElementById("heroTerm");
+  if(t) t.innerHTML='<span class="yr">2026年</span>9/11〜<span class="end-pop">'+EXT.endLabel+'</span>';
+
+  var f2=document.getElementById("heroFine");
+  if(f2) f2.innerHTML=EXT.endFull+'まで延長しました。<br>'
+       + 'ただしキットがなくなり次第終了します。<br>入館ゲートで販売中。参加には別途、水族館の入館料が必要です。';
+
+  var it=document.getElementById("infoTerm");
+  if(it) it.innerHTML='<b>2026年<br>9月11日 〜 '+EXT.endFull+'</b>'
+       + '<span class="ext-small">大好評につき延長しました！</span>';
+
+  var ik=document.getElementById("infoKit");
+  if(ik) ik.innerHTML='入館ゲートにて購入できます。【数量限定】'
+       + '<span class="ext-small">残りわずかです。'+EXT.endFull
+       + 'を待たずに終了する可能性が高いので、お早めにお越しください。</span>';
+
+  var fb=document.getElementById("flowBuy");
+  if(fb) fb.textContent='入館チケットの購入時に買えます。残りわずかなので、お早めに！';
+
+  var md=document.querySelector('meta[name="description"]');
+  if(md) md.setAttribute("content",
+    "大好評につき"+EXT.endFull+"まで期間延長（キットがなくなり次第終了）。"
+    + "竹島水族館を巡って7つの謎を解き明かす謎解きイベント。800円、約60〜90分。");
+
+  if(window.gtag) gtag("event","ext_banner_view");
+
+  /* --- 看板を持ったカニが主役。タケアシ君は少しだけ --- */
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  var layer=document.getElementById("confetti");
+  var sp = innerWidth < 600, vw = innerWidth;
+  var pieces=[], nSign = sp ? 4 : 6, nTake = sp ? 4 : 6;
+  // 看板は左右交互＋時間差で1枚ずつ降らせ、重なりを防ぐ
+  var order=[]; for(var o=0;o<nSign;o++) order.push(o); order.sort(function(){return Math.random()-.5});
+  for(var i=0;i<nSign;i++) pieces.push({sign:true, slot:order[i], seq:i});
+  for(var j=0;j<nTake;j++) pieces.push({sign:false});
+  var html="";
+  pieces.forEach(function(k){
+    var w = k.sign ? (sp ? 152+Math.random()*58 : 215+Math.random()*90)
+                   : 48+Math.random()*28;
+    var wp = w/vw*100, left;
+    if(k.sign){ // 看板どうしが重なりにくいよう、横位置を均等にばらす
+      left = (k.slot + 0.15 + Math.random()*0.7) / nSign * (100 - wp + 4) - 4;
+    } else {
+      left = Math.random()*(100 - wp);
+    }
+    var src = k.sign ? "conf-sign.webp" : "take"+(1+Math.floor(Math.random()*4))+".webp";
+    html+='<div class="cf'+(k.sign?' cf-sign':'')+'" style="'
+        + 'left:'+left.toFixed(1)+'%;width:'+w.toFixed(0)+'px;'
+        + '--d:'+(k.sign ? 5.6+Math.random()*2.4 : 4.2+Math.random()*2.4).toFixed(1)+'s;'
+        + '--dl:'+(k.sign ? k.seq*(sp?0.95:0.75)+Math.random()*0.35 : Math.random()*3.4).toFixed(2)+'s;'
+        + '--s:'+(1.6+Math.random()*1.4).toFixed(1)+'s;'
+        + '--a:'+(k.sign ? 8+Math.random()*16 : 10+Math.random()*26).toFixed(0)+'px;'
+        + '--r:'+(k.sign ? 1.6+Math.random()*1.2 : 2.2+Math.random()*3).toFixed(1)+'s;'
+        + '"><img src="'+src+'" alt=""'
+        + (!k.sign && Math.random()<0.5 ? ' style="animation-direction:reverse"' : '')
+        + '></div>';
+  });
+  layer.innerHTML=html;
+  setTimeout(function(){ layer.remove(); }, 13500);
+})();
 </script>
 </body>
 </html>
